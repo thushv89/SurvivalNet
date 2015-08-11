@@ -112,7 +112,7 @@ while (cursor < F * K)
             Xred_test = nn_test.a{end - 1};
             Xred_test = Xred_test(:, 2:end);
             
-            cindex_test_show = cIndex(b2, Xred_test, y_test, c_test)
+            cIndex(b2, Xred_test, y_test, c_test)
             cindex_test (iter) = cindex_test (iter) + cIndex(b2, Xred_test, y_test, c_test);
             lpl_test(iter) = lpl_test(iter) + LogPartialL(Xred_test, y_test, c_test, b2);
     end

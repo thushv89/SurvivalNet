@@ -15,8 +15,10 @@ randrows = randperm(size(X, 1));
 T = T(randrows);
 C = C(randrows);
 X = X(randrows, :);
-%get rid of protein data
-% X = X(:, 1:50);
-% X = rand(191, 50);
-% T = rand(191, 1);
-% C = (rand(191, 1) > .5);
+%% get rid of protein data
+%X = X(:, 1:20);
+
+% %% randomize data
+%  X = rand(191, 271);
+%  T = rand(191, 1);
+%  C = (rand(191, 1) > .5);

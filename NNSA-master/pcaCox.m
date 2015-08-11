@@ -1,39 +1,40 @@
+clear all;
 prepareData
 %% constants 
 iter = 1;
-K = 5;
-
+K = 3;
 
 c = zeros(iter, 1);
-%% K-fold cross-validation
+[coeff,Xred] = pca(X, 'NumComponents', 20);
 m = size(X, 1);
-F = floor(m / K);   
-for i = 1:iter
-    i
-    cursor = 0;
-    %% pca on whole data
-    [coeff,score] = pca(X, 'NumComponents', 10 + 18);
-    while (cursor < F * K)
-        starti = cursor + 1
-        if (m - cursor < K)
-            endi = m
-        else
-            endi = cursor + F
-        end
-        Xfold = score(starti:endi, :);
-        yfold = T(starti:endi);
-        cfold = C(starti:endi);
-        Xtfold = score([1:starti - 1 endi + 1:m], :);
-        ytfold = T([1:starti - 1 endi + 1:m]);
-        
-        %% regression on training set 
-        [b,logl,H,stats] = coxphfit(Xtfold, ytfold);
-        
-        %% cindex calculation on testing set
-        cIndex(b, Xfold, yfold, cfold)
-        c(i) = c(i) + cIndex(b, Xfold, yfold, cfold);
-        
-        cursor = cursor + F;
+F = floor(m / K);
+cursor = 0;
+cindex_train = 0;
+cindex_test = 0;
+while (cursor < F * K)
+    starti = cursor + 1;
+
+    if (m - cursor < K)
+        endi = m;
+    else
+        endi = cursor + F;
     end
-    c(i) = c(i) / K;
+    X_test = Xred(starti:endi, :);
+    y_test = T(starti:endi);
+    c_test = C(starti:endi);
+    X_train = Xred([1:starti - 1 endi + 1:m], :);
+    y_train = T([1:starti - 1 endi + 1:m]);
+    c_train = C([1:starti - 1 endi + 1:m]);
+
+    %% cox coefficients
+    [b2, logl, H, stats] = coxphfit(X_train, y_train);
+
+
+    cindex_train  = cindex_train  + cIndex(b2, X_train, y_train, c_train);
+    cindex_test  = cindex_test  + cIndex(b2, X_test, y_test, c_test);
+    cursor = cursor + F; 
+%perf = mse(autoenc1, autoenc1(D'), D', 'normalization', 'percent')
 end
+cindex_test = cindex_test / K;
+cindex_train = cindex_train / K;
+

@@ -1,9 +1,14 @@
+clear all;
 prepareData
-K = 5;
+
+    [b,logl,H,stats] = coxphfit(X, T);
+    c = cIndex(b, X, T, C)
+
+K = 3;
 
 c = 0;
 m = size(X, 1);
-F = round(m / K);
+F = floor(m / K);
 cursor = 0;
 while (cursor < F * K)
     starti = cursor + 1;
@@ -20,8 +25,8 @@ while (cursor < F * K)
     C_train = C([1:starti - 1 endi + 1:m]);
     [b,logl,H,stats] = coxphfit(X_train, T_train);
 
-    c = c + cIndex(b, X_train, T_train, C_train);
+    c = c + cIndex(b, X_test, T_test, C_test)
 
-    cursor = cursor + F; 
+    cursor = cursor + F 
 end
 c = c / K;

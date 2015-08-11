@@ -1,102 +1,61 @@
-clear all
+clear all;
 prepareData
 
-K = 100;
-
-%% configure secondary network
-% Create an empty network
-autoencHid1 = network;
-
-% Set the number of inputs and layers
-autoencHid1.numInputs = 1;
-autoencHid1.numlayers = 1;
-
-% Connect the 1st (and only) layer to the 1st input, and also connect the
-% 1st layer to the output
-autoencHid1.inputConnect(1,1) = 1;
-autoencHid1.outputConnect = 1;
-
-% Add a connection for a bias term to the first layer
-autoencHid1.biasConnect = 1;
-
-%% configure autoencoder
-%hiddenSize1 = 100;
-saeC = zeros(80,1);
-for hiddenSize = 80:2:80
-autoenc1 = feedforwardnet(hiddenSize);
-autoenc1.trainFcn = 'trainscg';
-autoenc1.trainParam.epochs = 200;
-
-% Do not use process functions at the input or output
-autoenc1.inputs{1}.processFcns = {};
-autoenc1.outputs{2}.processFcns = {};
-
-% Set the transfer function for both layers to the logistic sigmoid
-autoenc1.layers{1}.transferFcn = 'logsig';
-autoenc1.layers{2}.transferFcn = 'logsig';
-
-% Divide samples into three sets randomly
-autoenc1.divideFcn = 'dividetrain';
-
-autoenc1.performFcn = 'mse';
-autoenc1.performParam.normalization = 'percent';
-
-%autoenc1.performParam.L2WeightRegularization = 0.004;
-%autoenc1.performParam.sparsityRegularization = 4;
-%autoenc1.performParam.sparsity = 0.15;
+%X = X(randperm(size(X, 1), :));
+%% train SAE here
+%  Setup and train a stacked denoising autoencoder (SDAE)
+rng(0, 'v5uniform')
+% [coeff, X] = pca(X, 'NumComponents', floor(size(X, 2)/10));
+sae = saesetup([size(X, 2) 20]);
+sae.ae{1}.activation_function       = 'sigm';
+sae.ae{1}.learningRate              = 1;
+sae.ae{1}.inputZeroMaskedFraction   = 0;
+%sae.ae{2}.activation_function       = 'sigm';
+%sae.ae{2}.learningRate              = 1;
+%sae.ae{2}.inputZeroMaskedFraction   = 0;
+opts.numepochs =   100;
+opts.batchsize = 191;
+sae = saetrain(sae, X, opts);
+ 
+% %% obtain dimension reduced data
+sae.ae{1} = nnff(sae.ae{1}, X, X);
+Xred = sae.ae{1}.a{sae.ae{1}.n - 1};
+Xred = Xred(:, 2:end);
 
 %% Train the autoencoder 5-fold cross validation
+K = 3;
+m = size(X, 1);
+F = floor(m / K);
+cursor = 0;
+genErrSum = 0;
+cindex_train = 0;
+cindex_test = 0;
+while (cursor < F * K)
+    starti = cursor + 1;
 
-    m = size(X, 1);
-    F = floor(m / K);
-    cursor = 0;
-    genErrSum = 0;
-    while (cursor < F * K)
-        starti = cursor + 1;
-
-        if (m - cursor < K)
-            endi = m;
-        else
-            endi = cursor + F;
-        end
-        Xfold = X(starti:endi, :);
-        yfold = T(starti:endi);
-        cfold = C(starti:endi);
-        Xtfold = X([1:starti - 1 endi + 1:m], :);
-        ytfold = T([1:starti - 1 endi + 1:m]);
-
-        autoenc1 = train(autoenc1, Xtfold', Xtfold');
-        W1 = autoenc1.IW{1};
-        %% REMOVE LAST LAYER
-        % Set the size of the input and the 1st layer
-        inputSize = size(Xtfold, 2);
-        autoencHid1.inputs{1}.size = inputSize;
-        autoencHid1.layers{1}.size = hiddenSize;
-
-        % Use the logistic sigmoid transfer function for the first layer
-        autoencHid1.layers{1}.transferFcn = 'logsig';
-
-        % Copy the weights and biases from the first layer of the trained
-        % autoencoder to this network
-        autoencHid1.IW{1,1} = autoenc1.IW{1,1};
-        autoencHid1.b{1,1} = autoenc1.b{1,1};
-
-        feat1 = autoencHid1(Xtfold');
-        feat1 = feat1';
-        %view(autoencHid1);
-        %% SUPERVISED TRAINING
-        [b,logl,H,stats] = coxphfit(feat1,ytfold);
-        
-        feat2 = autoencHid1(Xfold');
-        feat2 = feat2';
-        saeC(hiddenSize) = saeC(hiddenSize) + cIndex(b, feat2, yfold, cfold);
-        cursor = cursor + F; 
+    if (m - cursor < K)
+        endi = m;
+    else
+        endi = cursor + F;
     end
-    saeC(hiddenSize) = saeC(hiddenSize) / K;
+    X_test = Xred(starti:endi, :);
+    y_test = T(starti:endi);
+    c_test = C(starti:endi);
+    X_train = Xred([1:starti - 1 endi + 1:m], :);
+    y_train = T([1:starti - 1 endi + 1:m]);
+    c_train = C([1:starti - 1 endi + 1:m]);
 
+    %% cox coefficients
+    [b2, logl, H, stats] = coxphfit(X_train, y_train);
+
+
+    cindex_train  = cindex_train  + cIndex(b2, X_train, y_train, c_train);
+    cindex_test  = cindex_test  + cIndex(b2, X_test, y_test, c_test);
+    cursor = cursor + F; 
 %perf = mse(autoenc1, autoenc1(D'), D', 'normalization', 'percent')
 end
-
+cindex_test = cindex_test / K;
+cindex_train = cindex_train / K;
 % net = configure(net, data_tr, data_tr);
 % net.trainFcn = 'trainlm';
 % net.performFcn = 'mse';
