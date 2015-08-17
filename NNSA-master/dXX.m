@@ -1,19 +1,15 @@
-function tmp = dXX(nn, X, l2, l1, q)
-    tmp = zeros(size(X, 2), 1);
+function out = dXX(nn, i)
+    J = nn.n - 1;
+    out = cell(J, 1);    
+    out{J} = eye(size(nn.a{J},2));
     
-    if (l1 == l2 - 1)
-        for d = 1: size(X, 2)
-            tmp(d) = nn.W{l1}(q, d) * dSigm(nn.a{l1} * nn.W{l1});
-        end
-    else
-        for d = 1: size(X, 2)
-            tmp3 =  dXX(nn, X, l1 + 1, l1, q);
-            for m = 1: size(nn.a{l1 + 1})
-                tmp2 = dXX(nn, X, l2, l1 + 1, m);
- 
-                tmp(d) = tmp(d) + tmp2(d, :) * ...
-                           tmp3(m, :);
-            end
-        end
+    for j = (J - 1):-1:1
+        B = dXXadj(nn, j, i);
+        out{j} = out{j + 1} * B;
     end
+end
+
+function B = dXXadj(nn, l1, i)
+    B = bsxfun(@times, nn.W{l1}, dSigm(nn.a{l1}(i, :) * nn.W{l1}))';
+    B = [zeros(1, size(nn.a{l1}, 2)); B];  
 end

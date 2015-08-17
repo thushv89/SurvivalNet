@@ -1,0 +1,23 @@
+function [ tmp ] = dXW(nn, dXX, i, l1, p, q)
+%DXW calculates dXred/dw{l1}(p, q)
+% return ...
+        
+    dXX{l1+1}(:, q + 1) *   
+%         tmp = zeros(size(nn.a{l2}, 2), 1);
+%         if (l2 == l1 + 1)
+%             for d = 2: length(tmp)
+%                 if (d == q)
+%                     tmp(d) = dSigm(nn.a{l1}(i, :) * nn.W{l1}(:, d)) * ...
+%                     nn.a{l1}(i, p);
+%                 end
+%             end
+%         else
+%             tmp2 = dXW(nn, i, l2 - 1, l1, p, q);
+%             
+%             for d = 2: length(tmp)
+%                 tmp3 = dXX(nn, i, l2, d, l2 - 1);
+%                 tmp(d) = tmp3(d, :) * tmp2(q, :); %should be two scalars
+% 
+%             end
+%         end     
+end

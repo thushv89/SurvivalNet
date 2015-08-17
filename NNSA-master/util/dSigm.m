@@ -1,4 +1,5 @@
 function [ y ] = dSigm( x )
-    y = sigm(x) .* (ones(size(x)) - sigm(x));
+    t = sigm(x);
+    y = t .* (ones(size(x)) - t);
 end
 
