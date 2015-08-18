@@ -95,16 +95,16 @@ while (cursor < F * K)
     for iter = 1:1:maxiter
 
             nn = calcGradient(nn, y_train, c_train, b);
-            [diff, grads] = gradCheck(nn, y_train, c_train, b);
+            %[diff, grads] = gradCheck(nn, y_train, c_train, b);
 
             for j = 1: nn.n - 1
                 nn.W{j} = nn.W{j} + StepSize .* grads{j};
             end
             b2 = nn.W{nn.n - 1};
             b2 = b2(2:end, :);
-            %nn = mynnff(nn, x_train, y_train, c_train);
-            %Xred = nn.a{end - 1};
-            %Xred = Xred(:, 2:end);
+            nn = mynnff(nn, x_train, y_train, c_train);
+            Xred_train_bias = nn.a{end - 1};
+            Xred_train = Xred_train_bias(:, 2:end);
             iter
             lpl_train_show = LogPartialL(Xred_train, y_train, c_train, b2)
             lpl_train(iter) = lpl_train(iter) + lpl_train_show;

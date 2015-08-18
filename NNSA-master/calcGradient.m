@@ -41,7 +41,8 @@ function [ nn ] = calcGradient( nn, Y, C, b )
         nn.deltaW{j} = zeros(P, Q);
 %        nn.deltaWapprox{j} = zeros(P, Q);
 %        nn.dXdwapprox{j} = zeros([P, Q, size(Xred)]);
-        for p = P:-1:1    
+        tic;
+        for p = P:-1:1
             for q = Q:-1:1
 %% Numerical calcucation of dXdW
 
@@ -72,5 +73,6 @@ function [ nn ] = calcGradient( nn, Y, C, b )
                 end
             end
         end
+        toc
     end
 end
