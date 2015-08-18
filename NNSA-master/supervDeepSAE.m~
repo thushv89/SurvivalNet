@@ -1,7 +1,7 @@
 %clear all;
 prepareData
 StepSize = 1e-4;
-hiddenSize = [40 30 20];
+hiddenSize = [40 10 10];
 %X = X(randperm(size(X, 1), :));
 %% train SAE here
 %  Setup and train a stacked denoising autoencoder (SDAE)
@@ -53,7 +53,7 @@ nn = mynnff(nn, X, T, C);
  m = size(X, 1);
  F = floor(m / K);
 cursor = 0;
-maxiter = 250;
+maxiter = 150;
 lpl_train = zeros(maxiter, 1);
 lpl_test = zeros(maxiter, 1);
 cindex_train = zeros(maxiter, 1);

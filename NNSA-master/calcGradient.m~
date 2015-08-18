@@ -36,17 +36,14 @@ function [ nn ] = calcGradient( nn, Y, C, b )
     
     
 %% Sigmoid layers
-    nn.d_act = cell(size(nn.a));
-    for j = (J - 1):-1:1
-        switch nn.activation_function 
-            case 'sigm'
-                nn.d_act{j} = nn.a{j} .* (1 - nn.a{j});
-            case 'tanh_opt'
-                nn.d_act{j} = 1.7159 * 2/3 * (1 - 1/(1.7159)^2 * nn.a{j}.^2);
-        end
-    end
+    nn.d_act
     for j = (J - 2):-1:1
-
+    switch nn.activation_function 
+        case 'sigm'
+            nn.d_act{i} = nn.a{i} .* (1 - nn.a{i});
+        case 'tanh_opt'
+            d_act = 1.7159 * 2/3 * (1 - 1/(1.7159)^2 * nn.a{i}.^2);
+        end
         [P, Q] = size(nn.W{j});
         nn.deltaW{j} = zeros(P, Q);
 %        nn.deltaWapprox{j} = zeros(P, Q);
