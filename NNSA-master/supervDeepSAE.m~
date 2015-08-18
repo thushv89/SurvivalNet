@@ -1,6 +1,6 @@
 %clear all;
 prepareData
-StepSize = 1e-4;
+StepSize = 1e-3;
 hiddenSize = [40 10 10];
 %X = X(randperm(size(X, 1), :));
 %% train SAE here
@@ -100,11 +100,14 @@ while (cursor < F * K)
             for j = 1: nn.n - 1
                 nn.W{j} = nn.W{j} + StepSize .* nn.deltaW{j};
             end
+            
+            %% get performance with updated weights
             b2 = nn.W{nn.n - 1};
             b2 = b2(2:end, :);
             nn = mynnff(nn, x_train, y_train, c_train);
             Xred_train_bias = nn.a{end - 1};
             Xred_train = Xred_train_bias(:, 2:end);
+            
             iter
             lpl_train_show = LogPartialL(Xred_train, y_train, c_train, b2)
             lpl_train(iter) = lpl_train(iter) + lpl_train_show;
@@ -114,6 +117,7 @@ while (cursor < F * K)
             
             
             %% Test
+            % apply updated parameters to test data
             nn_test = mynnff(nn, x_test, y_test, c_test);
             Xred_test = nn_test.a{end - 1};
             Xred_test = Xred_test(:, 2:end);

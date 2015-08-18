@@ -18,6 +18,8 @@ X = X(randrows, :);
 %% get rid of protein data
 %X = X(:, 1:20);
 
+%% pca
+%[coeff, X] = pca(X, 'NumComponents', 40);
 % %% randomize data
 %  X = rand(191, 271);
 %  T = rand(191, 1);

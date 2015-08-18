@@ -1,7 +1,7 @@
 %clear all;
 prepareData
-StepSize = 1e-4;
-hiddenSize = [40 30 20];
+StepSize = 1e-3;
+hiddenSize = [40 10 10];
 %X = X(randperm(size(X, 1), :));
 %% train SAE here
 %  Setup and train a stacked denoising autoencoder (SDAE)
@@ -100,12 +100,15 @@ while (cursor < F * K)
             for j = 1: nn.n - 1
                 nn.W{j} = nn.W{j} + StepSize .* nn.deltaW{j};
             end
+            
+            %% get performance with updated weights
+            % apply updated parameters to train data
             b2 = nn.W{nn.n - 1};
             b2 = b2(2:end, :);
             nn = mynnff(nn, x_train, y_train, c_train);
             Xred_train_bias = nn.a{end - 1};
             Xred_train = Xred_train_bias(:, 2:end);
-            iter
+      
             lpl_train_show = LogPartialL(Xred_train, y_train, c_train, b2)
             lpl_train(iter) = lpl_train(iter) + lpl_train_show;
             cindex_train_show = cIndex(b2, Xred_train, y_train, c_train)
@@ -114,6 +117,7 @@ while (cursor < F * K)
             
             
             %% Test
+            % apply updated parameters to test data
             nn_test = mynnff(nn, x_test, y_test, c_test);
             Xred_test = nn_test.a{end - 1};
             Xred_test = Xred_test(:, 2:end);
@@ -121,6 +125,7 @@ while (cursor < F * K)
             %cindex_test_show = cIndex(b2, Xred_test, y_test, c_test)
             cindex_test (iter) = cindex_test (iter) + cIndex(b2, Xred_test, y_test, c_test);
             lpl_test(iter) = lpl_test(iter) + LogPartialL(Xred_test, y_test, c_test, b2);
+            iter
     end
     cursor = cursor + F;
  end
