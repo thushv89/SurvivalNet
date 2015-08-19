@@ -15,6 +15,9 @@ randrows = randperm(size(X, 1));
 T = T(randrows);
 C = C(randrows);
 X = X(randrows, :);
+X = X(1:190, :);
+C = C(1:190);
+T = T(1:190);
 %% get rid of protein data
 %X = X(:, 1:20);
 

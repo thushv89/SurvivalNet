@@ -1,7 +1,7 @@
 %clear all;
 prepareData
 StepSize = 1e-3;
-hiddenSize = [10 10 10 10];
+hiddenSize = [10 10];
 
 %% train SAE here
 %  Setup and train a stacked denoising autoencoder (SDAE)
@@ -15,8 +15,8 @@ for hl = 1:numel(sae.ae)
     sae.ae{hl}.dropoutFraction           = .5;
 end
 
-opts.numepochs = 500;
-opts.batchsize = 191;
+opts.numepochs = 200;
+opts.batchsize = 10;
 sae = saetrain(sae, X, opts);
  
 %% obtain dimension reduced data
@@ -54,7 +54,7 @@ K = 3;
 m = size(X, 1);
 F = floor(m / K);
 cursor = 0;
-maxiter = 150;
+maxiter = 500;
 lpl_train = zeros(maxiter, 1);
 lpl_test = zeros(maxiter, 1);
 cindex_train = zeros(maxiter, 1);
@@ -77,8 +77,8 @@ while (cursor < F * K)
 
     nn = mynnsetup([size(x_train, 2) hiddenSize 1]);
     nn.activation_function              = 'sigm';
-    nn.inputZeroMaskedFraction   = .5;
-    nn.dropoutFraction           = .5;
+    %nn.inputZeroMaskedFraction   = .5;
+    %nn.dropoutFraction           = .5;
     hl = 1;
     for hl = 1:nn.n - 2
         nn.W{hl} = sae.ae{hl}.W{1}';
