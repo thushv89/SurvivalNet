@@ -1,4 +1,3 @@
-
-*.m~
-
+BaseLineModel/.idea
+*.pyc
 *.m~
