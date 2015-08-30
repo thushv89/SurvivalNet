@@ -1,3 +1,4 @@
-FFANN/.idea
+.idea
+.gitignore
 *.pyc
 *.m~

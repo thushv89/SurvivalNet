@@ -4,9 +4,9 @@ __author__ = 'Song'
 
 from path import Path
 from pandas import *
+from lifelines.coxph_fitter import CoxPHFitter
 import pandas as pd
 import numpy as np
-import theano
 
 
 drop_list = ['Remission_Duration', 'resp.simple', 'Relapse']
@@ -29,6 +29,31 @@ def fill_na_with_mean(column):
     column.fillna(avg, inplace=True)
     return avg
 
+
+def discrete_time_data(old_x, observed, start=0.5):
+    x = []
+    new_observed = []
+    # each entry in x is a list of all time prior than x
+    for row in old_x.iterrows():
+        index, data = row
+        temp = list(data)
+        time = data[0]
+        step = start
+        while step < time:
+            new_row = temp[:]
+            new_row[0] = step
+            x.append(new_row)
+            new_observed.append(0.0)
+            step += start
+        temp[0] = step
+        x.append(temp)
+        if observed[index]:
+            new_observed.append(1.0)
+        else:
+            new_observed.append(0.0)
+    return np.asarray(x), np.asarray(new_observed)
+
+
 def load_training_data(dataset):
     print 'loading data'
     p = Path(dataset)
@@ -46,7 +71,9 @@ def load_training_data(dataset):
             new_column = Series(np.ones(len(value)), index=value)
             df.insert(0, name, new_column)
             avg_map[name] = [1]
+
     numerical_features = set(df.columns).difference(set(categorical_features))
+
     for column in numerical_features:
         avg = fill_na_with_mean(df[column])
         avg_map[column] = [avg]
@@ -56,13 +83,18 @@ def load_training_data(dataset):
 
     test_series = DataFrame(avg_map, columns=df.columns)
     test_series.pop('Overall_Survival')
-
-    shared_x = theano.shared(np.asarray(df, dtype=theano.config.floatX), borrow=True)
-    shared_t = theano.shared(np.asarray(t_column, dtype=theano.config.floatX), borrow=True)
-
+    # print np.asarray(test_series)[0]
     observed.replace(to_replace='A', value=0, inplace=True)
     observed.replace(to_replace='D', value=1, inplace=True)
+    df.pop('vital.status')
+    x, discrete_observed = discrete_time_data(df, observed)
 
-    return shared_x, shared_t, t_column, observed, test_series
+    # df.insert(0, 'event_col', observed)
+    # cf = CoxPHFitter()
+    # cf.fit(df, 'Overall_Survival', 'event_col')
+    # cf.survival_function_.plot(c='r')
+    # print df.columns
+    return x, discrete_observed, t_column, observed, np.asarray(test_series)[0]
 
-# load_training_data('C:/Users/Song/Research/biomed/trainingData.csv')
+if __name__ == '__main__':
+    load_training_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
