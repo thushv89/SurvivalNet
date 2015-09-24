@@ -30,31 +30,32 @@ def fill_na_with_mean(column):
     return avg
 
 
-def discrete_time_data(old_x, observed, start=0.1):
-    x = []
-    new_observed = []
-    # each entry in x is a list of all time prior than x
-    for row in old_x.iterrows():
-        index, data = row
-        temp = list(data)
-        time = data[0]
-        step = start
-        while step < time:
-            new_row = temp[:]
-            new_row[0] = step
-            x.append(new_row)
-            new_observed.append(0.0)
-            step += start
-        temp[0] = step
-        x.append(temp)
-        if observed[index]:
-            new_observed.append(1.0)
-        else:
-            new_observed.append(0.0)
-    return np.asarray(x), np.asarray(new_observed)
+def get_3d_ordered_sample(uncensored, df):
+    later_examples = []
+    for row_index, row in uncensored.iterrows():
+        later_example = df[df['Overall_Survival'] >= row['Overall_Survival']]
+        later_example.pop('vital.status')
+        later_example = np.asarray(later_example.drop(row_index))
+        n_zeros_rows = len(df) - later_example.shape[0]
+        zeros = np.zeros((n_zeros_rows, 295))
+        later_example = np.concatenate([later_example, zeros])
+        later_examples.append(later_example)
+    return np.asarray(later_examples)
 
 
-def load_training_data(dataset):
+def get_at_risk_index(df):
+    index = []
+    for row_index, row in df.iterrows():
+        later_example = df[df['Overall_Survival'] >= row['Overall_Survival']]
+        # later_example = np.asarray(later_example.drop(row_index))
+        n_zeros_rows = len(df) - later_example.shape[0]
+        index.append(n_zeros_rows)
+    # index[-1] = 0
+    # print index
+    return index
+
+
+def load_data(dataset):
     print 'loading data'
     p = Path(dataset)
     df = pd.read_csv(p, index_col=0)
@@ -79,22 +80,18 @@ def load_training_data(dataset):
 
     t_column = df.pop('Overall_Survival')
     df.insert(0, 'Overall_Survival', t_column)
+    df.insert(0, 'vital.status', observed)
     df.fillna(0, inplace=True)
 
+    df = df.sort('Overall_Survival')   # sort based on survival time
+    at_risk = get_at_risk_index(df[len(df)/3:])  # get the at risk for the later 2 / 3 training examples
     avg_series = DataFrame(avg_map, columns=df.columns)
     avg_series.pop('Overall_Survival')
-    # print np.asarray(test_series)[0]
-    observed.replace(to_replace='A', value=0, inplace=True)
-    observed.replace(to_replace='D', value=1, inplace=True)
+    survival_time = df.pop('Overall_Survival')
     df.pop('vital.status')
 
-    test_size = len(df) / 3
-    test_x = np.asarray(df[:test_size])
-    train_x = df[test_size:]
-    x, discrete_observed = discrete_time_data(train_x, observed)
-    observed = observed[:test_size]
-    survival_time = t_column[:test_size]
-    return x, discrete_observed, survival_time, observed, np.asarray(avg_series)[0], test_x
+    return np.asarray(observed, dtype='int32'), np.asarray(df), np.asarray(survival_time), np.asarray(at_risk)
+
 
 if __name__ == '__main__':
-    load_training_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
+    observed, X, survival_time, at_risk = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
