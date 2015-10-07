@@ -162,11 +162,14 @@ class SdA(object):
         gparams = T.grad(self.finetune_cost, self.params)
 
         # compute list of fine-tuning updates
+        # updates = [
+        #     (param, param - theano.printing.Print('gradient')(gparam) * learning_rate)
+        #     for param, gparam in zip(self.params, gparams)
+        # ]
         updates = [
-            (param, param - gparam * learning_rate)
+            (param, param + gparam * learning_rate)
             for param, gparam in zip(self.params, gparams)
         ]
-
         train_fn = theano.function(
             on_unused_input='ignore',
             inputs=[index],
@@ -185,6 +188,7 @@ class SdA(object):
             outputs=self.logLayer.output,
             givens={
                 self.x: test_X,
+                self.o: train_observed
             },
             name='output'
         )

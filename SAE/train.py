@@ -7,10 +7,11 @@ from loadData import load_data
 from SdA import SdA
 import numpy
 from lifelines.utils import _naive_concordance_index
+import matplotlib.pyplot as plt
 
 
-def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
-             pretrain_lr=0.001, training_epochs=1000, batch_size=1):
+def test_SdA(finetune_lr=10.0, pretraining_epochs=30, n_layers=3,
+             pretrain_lr=1.0, training_epochs=600, batch_size=1):
 
     observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
     n_ins = X.shape[1]
@@ -29,7 +30,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
     sda = SdA(
         numpy_rng=numpy_rng,
         n_ins=n_ins,
-        hidden_layers_sizes=[100, 100, 100],
+        hidden_layers_sizes=[180] * n_layers,
         n_outs=1,
         at_risk=at_risk_X
     )
@@ -44,7 +45,8 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
     print '... pre-training the model'
     start_time = timeit.default_timer()
     # Pre-train layer-wise
-    corruption_levels = [.0, .0, .0]
+    # de-noising level, set to zero for now
+    corruption_levels = [.0] * n_layers
     for i in xrange(sda.n_layers):
         # go through pretraining epochs
         for epoch in xrange(pretraining_epochs):
@@ -87,6 +89,8 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
         c_index = _naive_concordance_index(test_y, test_harzard, test_observed)
         c.append(c_index)
         print 'at epoch %d, cost is %f, test c_index is %f' % (epoch, avg_cost, c_index)
-
+    plt.ylim(0.2, 0.8)
+    plt.plot(range(len(c)), c, c='r', marker='o', lw=5, ms=10, mfc='c')
+    plt.show()
 if __name__ == '__main__':
     test_SdA()
