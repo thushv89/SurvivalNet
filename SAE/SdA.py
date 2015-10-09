@@ -205,18 +205,18 @@ class SdA(object):
             name='output'
         )
 
-        last_grad_fn = theano.function(
-            on_unused_input='ignore',
-            inputs=[index],
-            outputs=self.last_gradient,
-            givens={
-                self.x: train_X,
-                self.o: train_observed
-            },
-            name='output'
-        )
+        # last_grad_fn = theano.function(
+        #     on_unused_input='ignore',
+        #     inputs=[index],
+        #     outputs=self.last_gradient,
+        #     givens={
+        #         self.x: train_X,
+        #         self.o: train_observed
+        #     },
+        #     name='output'
+        # )
 
-        return train_fn, output_fn, last_grad_fn
+        return train_fn, output_fn, grad_fn
 
     def reset_weight(self, params):
         for i in xrange(len(self.sigmoid_layers)):

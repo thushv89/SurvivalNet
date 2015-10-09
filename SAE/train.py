@@ -96,18 +96,18 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=50, n_layers=3, pretrain_lr=1.
         test_X=test_X,
         learning_rate=finetune_lr
     )
-    # train_fn_plus, output_fn_plus, grad_fn_plus = sda_plus.build_finetune_functions(
-    #     train_X=train_X,
-    #     train_observed=train_observed,
-    #     test_X=test_X,
-    #     learning_rate=finetune_lr
-    # )
-    # train_fn_minus, output_fn_minus, grad_fn_minus = sda_minus.build_finetune_functions(
-    #     train_X=train_X,
-    #     train_observed=train_observed,
-    #     test_X=test_X,
-    #     learning_rate=finetune_lr
-    # )
+    train_fn_plus, output_fn_plus, grad_fn_plus = sda_plus.build_finetune_functions(
+        train_X=train_X,
+        train_observed=train_observed,
+        test_X=test_X,
+        learning_rate=finetune_lr
+    )
+    train_fn_minus, output_fn_minus, grad_fn_minus = sda_minus.build_finetune_functions(
+        train_X=train_X,
+        train_observed=train_observed,
+        test_X=test_X,
+        learning_rate=finetune_lr
+    )
 
     print '... finetunning the model'
     # early-stopping parameters
@@ -121,53 +121,51 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=50, n_layers=3, pretrain_lr=1.
         test_harzard = output_fn(epoch)
         grad = grad_fn(epoch)
         parameter = [param.get_value() for param in sda.params]
-        print grad
-
-        # for l in xrange(len(parameter)):
-        #     param = parameter[l]
-        #     if len(param.shape) == 1:
-        #         for i in xrange(len(param)):
-        #             # dimention level
-        #             param_plus = copy.copy(param)
-        #             param_plus[i] += e
-        #             param_minus = copy.copy(param)
-        #             param_minus[i] -= e
-        #             # layer level
-        #             parameter_plus = copy.copy(parameter)
-        #             parameter_plus[l] = parameter_plus
-        #             parameter_minus = copy.copy(parameter)
-        #             parameter_minus[l] = parameter_minus
-        #             # reset weight
-        #             sda_plus.reset_weight(parameter_plus)
-        #             sda_minus.reset_weight(parameter_minus)
-        #             # get reset cost
-        #             cost_plus = train_fn_plus(epoch)
-        #             cost_minus = train_fn_minus(epoch)
-        #             appro_grad = (cost_plus - cost_minus) / 2 * e
-        #             diff = grad[l][i] - appro_grad
-        #             print diff
-        #     if len(param.shape) == 2:
-        #         for i in xrange(len(param)):
-        #             for j in xrange(len(param[i])):
-        #                 # dimention level
-        #                 param_plus = copy.copy(param)
-        #                 param_plus[i][j] += e
-        #                 param_minus = copy.copy(param)
-        #                 param_minus[i][j] -= e
-        #                 # layer level
-        #                 parameter_plus = copy.copy(parameter)
-        #                 parameter_plus[l] = parameter_plus
-        #                 parameter_minus = copy.copy(parameter)
-        #                 parameter_minus[l] = parameter_minus
-        #                 # reset weight
-        #                 sda_plus.reset_weight(parameter_plus)
-        #                 sda_minus.reset_weight(parameter_minus)
-        #                 # get reset cost
-        #                 cost_plus = train_fn_plus(epoch)
-        #                 cost_minus = train_fn_minus(epoch)
-        #                 appro_grad = (cost_plus - cost_minus) / 2 * e
-        #                 diff = grad[l][i][j] - appro_grad
-        #                 print diff
+        for l in xrange(len(parameter)):
+            param = parameter[l]
+            if len(param.shape) == 1:
+                for i in xrange(len(param)):
+                    # dimention level
+                    param_plus = copy.copy(param)
+                    param_plus[i] += e
+                    param_minus = copy.copy(param)
+                    param_minus[i] -= e
+                    # layer level
+                    parameter_plus = copy.copy(parameter)
+                    parameter_plus[l] = parameter_plus
+                    parameter_minus = copy.copy(parameter)
+                    parameter_minus[l] = parameter_minus
+                    # reset weight
+                    sda_plus.reset_weight(parameter_plus)
+                    sda_minus.reset_weight(parameter_minus)
+                    # get reset cost
+                    cost_plus = train_fn_plus(epoch)
+                    cost_minus = train_fn_minus(epoch)
+                    appro_grad = (cost_plus - cost_minus) / 2 * e
+                    diff = grad[l][i] - appro_grad
+                    print diff
+            if len(param.shape) == 2:
+                for i in xrange(len(param)):
+                    for j in xrange(len(param[i])):
+                        # dimention level
+                        param_plus = copy.copy(param)
+                        param_plus[i][j] += e
+                        param_minus = copy.copy(param)
+                        param_minus[i][j] -= e
+                        # layer level
+                        parameter_plus = copy.copy(parameter)
+                        parameter_plus[l] = parameter_plus
+                        parameter_minus = copy.copy(parameter)
+                        parameter_minus[l] = parameter_minus
+                        # reset weight
+                        sda_plus.reset_weight(parameter_plus)
+                        sda_minus.reset_weight(parameter_minus)
+                        # get reset cost
+                        cost_plus = train_fn_plus(epoch)
+                        cost_minus = train_fn_minus(epoch)
+                        appro_grad = (cost_plus - cost_minus) / 2 * e
+                        diff = grad[l][i][j] - appro_grad
+                        print diff
         c_index = _naive_concordance_index(test_y, test_harzard, test_observed)
         c.append(c_index)
         cost_list.append(avg_cost)

@@ -55,8 +55,8 @@ class LogLikelihoodLayer(object):
         denominator = Te.cumsum(risk[::-1])[::-1][at_risk] * T.ones((1, self.input.shape[0]))
         # numerator = numerator.flatten()
         # denominator = denominator.flatten()
-        gradient = T.dot(observed, self.input - (numerator / denominator))
-        return gradient
+        # gradient = T.dot(observed, self.input - (numerator / denominator))
+        return None
 
     def reset_weight(self, params):
         self.W = params
