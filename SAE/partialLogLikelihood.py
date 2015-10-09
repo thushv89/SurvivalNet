@@ -42,12 +42,25 @@ class LogLikelihoodLayer(object):
 
     def cost(self, observed, at_risk):
         prediction = self.output
+        # check = theano.printing.Print('partial_sum', attrs=["__len__"])(prediction)
         partial_sum = Te.cumsum(T.exp(prediction)[::-1])[::-1]    # get the reversed partial cumulative sum
-        # partial_sum = T.set_subtensor(partial_sum[0], 0)    # set the last one to be zero
         cost = T.sum(T.dot(observed, prediction - T.log(partial_sum[at_risk])))
         return cost
 
+    def gradient(self, observed, at_risk):
+        prediction = self.output
+        risk = T.exp(prediction)
+        product = self.input * (risk * T.ones((1, self.input.shape[0])))
+        numerator = Te.cumsum(product[::-1])[::-1][at_risk]
+        denominator = Te.cumsum(risk[::-1])[::-1][at_risk] * T.ones((1, self.input.shape[0]))
+        # numerator = numerator.flatten()
+        # denominator = denominator.flatten()
+        gradient = T.dot(observed, self.input - (numerator / denominator))
+        return gradient
+
+    def reset_weight(self, params):
+        self.W = params
 
 if __name__ == '__main__':
-    test()
-    # logLayer = LogLikelihoodLayer(input=T.matrix('x'), n_in=2, n_out=1)
+    logLayer = LogLikelihoodLayer(input=T.matrix('x'), n_in=2, n_out=1)
+    logLayer.gradient([0,0], [1,1])

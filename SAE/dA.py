@@ -220,3 +220,5 @@ class dA(object):
         ]
 
         return (cost, updates)
+
+
