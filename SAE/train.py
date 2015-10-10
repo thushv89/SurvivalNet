@@ -114,7 +114,7 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=50, n_layers=3, pretrain_lr=1.
     c = []
     cost_list = []
     epoch = 0
-    e = 0.1 ** 4
+    e = 0.01 ** 2
     while epoch < 1:
         epoch += 1
         avg_cost = train_fn(epoch)
@@ -123,27 +123,27 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=50, n_layers=3, pretrain_lr=1.
         parameter = [param.get_value() for param in sda.params]
         for l in xrange(len(parameter)):
             param = parameter[l]
-            if len(param.shape) == 1:
-                for i in xrange(len(param)):
-                    # dimention level
-                    param_plus = copy.copy(param)
-                    param_plus[i] += e
-                    param_minus = copy.copy(param)
-                    param_minus[i] -= e
-                    # layer level
-                    parameter_plus = copy.copy(parameter)
-                    parameter_plus[l] = parameter_plus
-                    parameter_minus = copy.copy(parameter)
-                    parameter_minus[l] = parameter_minus
-                    # reset weight
-                    sda_plus.reset_weight(parameter_plus)
-                    sda_minus.reset_weight(parameter_minus)
-                    # get reset cost
-                    cost_plus = train_fn_plus(epoch)
-                    cost_minus = train_fn_minus(epoch)
-                    appro_grad = (cost_plus - cost_minus) / 2 * e
-                    diff = grad[l][i] - appro_grad
-                    print diff
+            # if len(param.shape) == 1:
+            #     for i in xrange(len(param)):
+            #         # dimention level
+            #         param_plus = copy.copy(param)
+            #         param_plus[i] += e
+            #         param_minus = copy.copy(param)
+            #         param_minus[i] -= e
+            #         # layer level
+            #         parameter_plus = copy.copy(parameter)
+            #         parameter_plus[l] = parameter_plus
+            #         parameter_minus = copy.copy(parameter)
+            #         parameter_minus[l] = parameter_minus
+            #         # reset weight
+            #         sda_plus.reset_weight(parameter_plus)
+            #         sda_minus.reset_weight(parameter_minus)
+            #         # get reset cost
+            #         cost_plus = train_fn_plus(epoch)
+            #         cost_minus = train_fn_minus(epoch)
+            #         appro_grad = (cost_plus - cost_minus) / 2 * e
+            #         diff = grad[l][i] - appro_grad
+            #         print diff
             if len(param.shape) == 2:
                 for i in xrange(len(param)):
                     for j in xrange(len(param[i])):
@@ -154,18 +154,18 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=50, n_layers=3, pretrain_lr=1.
                         param_minus[i][j] -= e
                         # layer level
                         parameter_plus = copy.copy(parameter)
-                        parameter_plus[l] = parameter_plus
+                        parameter_plus[l] = param_plus
                         parameter_minus = copy.copy(parameter)
-                        parameter_minus[l] = parameter_minus
+                        parameter_minus[l] = param_minus
                         # reset weight
                         sda_plus.reset_weight(parameter_plus)
                         sda_minus.reset_weight(parameter_minus)
                         # get reset cost
                         cost_plus = train_fn_plus(epoch)
                         cost_minus = train_fn_minus(epoch)
-                        appro_grad = (cost_plus - cost_minus) / 2 * e
+                        appro_grad = (cost_plus - cost_minus) / (2 * e)
                         diff = grad[l][i][j] - appro_grad
-                        print diff
+                        print diff  # / grad[l][i][j] * 100
         c_index = _naive_concordance_index(test_y, test_harzard, test_observed)
         c.append(c_index)
         cost_list.append(avg_cost)

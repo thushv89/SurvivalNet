@@ -87,9 +87,8 @@ class HiddenLayer(object):
         self.params = [self.W, self.b]
 
     def reset_weight(self, params):
-        self.W = params[0]
-        self.b = params[1]
-
+        self.W.set_value(params[0])
+        self.b.set_value(params[1])
 
 # start-snippet-2
 class MLP(object):

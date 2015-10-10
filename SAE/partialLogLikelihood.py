@@ -59,7 +59,7 @@ class LogLikelihoodLayer(object):
         return None
 
     def reset_weight(self, params):
-        self.W = params
+        self.W.set_value(params)
 
 if __name__ == '__main__':
     logLayer = LogLikelihoodLayer(input=T.matrix('x'), n_in=2, n_out=1)

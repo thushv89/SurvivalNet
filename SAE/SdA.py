@@ -219,6 +219,6 @@ class SdA(object):
         return train_fn, output_fn, grad_fn
 
     def reset_weight(self, params):
-        for i in xrange(len(self.sigmoid_layers)):
+        for i in xrange(self.n_layers):
             self.sigmoid_layers[i].reset_weight((params[2*i], params[2*i+1]))
         self.logLayer.reset_weight(params[-1])
