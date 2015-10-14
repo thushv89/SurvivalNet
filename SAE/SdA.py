@@ -5,7 +5,7 @@ import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
 
 from partialLogLikelihood import LogLikelihoodLayer
-from mlp import HiddenLayer
+from mlp import HiddenLayer, DropoutHiddenLayer
 from dA import dA
 
 
@@ -19,7 +19,9 @@ class SdA(object):
         hidden_layers_sizes=[500, 500],
         n_outs=10,
         corruption_levels=[0.1, 0.1],
-        at_risk=None
+        at_risk=None,
+        drop_out=False,
+        dropout_rate=0.1
     ):
         """ This class is made to support a variable number of layers.
         :type numpy_rng: numpy.random.RandomState
@@ -83,7 +85,13 @@ class SdA(object):
             else:
                 layer_input = self.sigmoid_layers[-1].output
 
-            sigmoid_layer = HiddenLayer(rng=numpy_rng,
+            sigmoid_layer = DropoutHiddenLayer(rng=numpy_rng,
+                                        input=layer_input,
+                                        n_in=input_size,
+                                        n_out=hidden_layers_sizes[i],
+                                        activation=T.nnet.sigmoid,
+                                        dropout_rate=dropout_rate) \
+                if drop_out else HiddenLayer(rng=numpy_rng,
                                         input=layer_input,
                                         n_in=input_size,
                                         n_out=hidden_layers_sizes[i],

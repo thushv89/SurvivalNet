@@ -121,6 +121,8 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=10, n_layers=2, pretrain_lr=1.
     sda.logLayer.reset_weight(b)
     print numpy.dot(last_out, b)
 
+
+
     print '... finetunning the model'
     # early-stopping parameters
     c = []
