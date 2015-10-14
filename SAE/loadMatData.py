@@ -20,6 +20,7 @@ def load_data(p=Path('data/LUAD_P.mat')):
     at_risk = np.asarray(eng.ismember(temp, temp, nargout=2)[1][0]).astype(int)
     censored = np.asarray([c[0] for c in C], dtype='int32')
     survival_time = np.asarray(survival_time[0])
+    # print survival_time
     return 1 - censored[order], X[order], survival_time, at_risk - 1
 
 if __name__ == '__main__':
