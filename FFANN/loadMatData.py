@@ -33,14 +33,14 @@ def discrete_time_data(old_x, observed, survival_time, start=0.1):
     return np.asarray(x), np.asarray(new_observed)
 
 
-def load_data(p=Brain_P):
+def load_data(p=Brain_P, step=0.1):
     print "loading data..."
     observed, X, survival_time = load_mat_data(p)
     test_size = len(X) / 3
     train_X = X[test_size:]
     # print train_X.shape
     train_y = survival_time[test_size:]
-    train_X, train_observed = discrete_time_data(train_X, observed, train_y)
+    train_X, train_observed = discrete_time_data(train_X, observed, train_y, start=step)
     test_X = X[:test_size]
     test_observed = observed[:test_size]
     test_y = survival_time[:test_size]
@@ -63,5 +63,16 @@ def load_mat_data(p):
     # print survival_time
     return 1 - censored[order], X[order], survival_time
 
+
+def save_csv(name="LUAD_P.csv", p=LUAD_P):
+    observed, X, survival_time = load_mat_data(p=p)
+    print X.shape
+    X = np.insert(X, 0, observed, axis=1)
+    X = np.insert(X, 0, survival_time, axis=1)
+    print X.shape
+    np.savetxt(Path('C:/Users/Song/Research/biomed/Survival/RSF/' + name), X, delimiter=',', fmt='%10.5f')
+
 if __name__ == '__main__':
-    load_data()
+    save_csv(name="LUSC_P.csv", p=LUSC_P)
+    save_csv(name="VA.csv", p=VA)
+    save_csv(name="Brain_P.csv", p=Brain_P)

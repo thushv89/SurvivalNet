@@ -18,10 +18,10 @@ LUSC_P = Path('data/LUSC_P.mat')
 Brain_P = Path('data/Brain_P.mat')
 
 
-def main(learning_rate=0.0025, L1_reg=0.5, L2_reg=0.75, n_epochs=300,
+def main(learning_rate=0.0001, L1_reg=0.00, L2_reg=0.075, n_epochs=300,
              dataset=LUAD_P, n_hidden=100):
     # train_set_x,  discrete_observed, survival_time, observed, test_data = load_training_data(dataset)
-    train_set_x,  discrete_observed, survival_time, observed, test_data = load_data(dataset)
+    train_set_x,  discrete_observed, survival_time, observed, test_data = load_data(dataset, step=1)
     # compute number of minibatches for training, validation and testing
     input_shape = train_set_x.shape[1]
     ######################
@@ -92,7 +92,7 @@ def main(learning_rate=0.0025, L1_reg=0.5, L2_reg=0.75, n_epochs=300,
     while epoch < n_epochs:
         epoch += 1
         avg_cost = train_model(epoch)
-        learning_rate *= 0.95
+        # learning_rate *= 0.95
         params = [param.get_value() for param in classifier.params]
         c_index = get_c_index(params, test_data, survival_time, observed)
         c.append(c_index)
