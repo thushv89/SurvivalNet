@@ -91,10 +91,10 @@ def load_training_data(dataset):
     test_size = len(df) / 3
     test_x = np.asarray(df[:test_size])
     train_x = df[test_size:]
-    x, discrete_observed = discrete_time_data(train_x, observed)
-    observed = observed[:test_size]
-    survival_time = t_column[:test_size]
-    return x, discrete_observed, survival_time, observed, np.asarray(avg_series)[0], test_x
+    train_x, train_observed = discrete_time_data(train_x, observed)
+    test_observed = observed[:test_size]
+    test_y = t_column[:test_size]
+    return train_x, train_observed, test_y, test_observed, test_x
 
 if __name__ == '__main__':
     load_training_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')

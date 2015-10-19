@@ -3,9 +3,35 @@ import scipy.io as sio
 from path import Path
 import matlab.engine
 import numpy as np
+import cPickle
 
 
-def load_data(p=Path('data/LUAD_P.mat')):
+VA = Path('data/VA.mat')
+LUAD_P = Path('data/LUAD_P.mat')
+LUSC_P = Path('data/LUSC_P.mat')
+Brain_P = Path('data/Brain_P.mat')
+
+
+def save_pickle(name='LUAD_P.pickle', p=LUAD_P):
+    observed, x, y, at_risk = load_data(p=p)
+    f = file(name, 'wb')
+    for obj in [observed, x, y, at_risk]:
+        cPickle.dump(obj, f, protocol=cPickle.HIGHEST_PROTOCOL)
+    f.close()
+
+
+def read_pickle(name='LUAD_P.pickle'):
+    f = file(name, 'rb')
+    loaded_objects = []
+    for i in range(4):
+        loaded_objects.append(cPickle.load(f))
+    observed, X, survival_time, at_risk_X = loaded_objects
+    f.close()
+    print at_risk_X
+    return observed, X, survival_time, at_risk_X
+
+
+def load_data(p=LUAD_P):
     mat = sio.loadmat(p)
     X = mat['X']
     C = mat['C']
@@ -24,4 +50,7 @@ def load_data(p=Path('data/LUAD_P.mat')):
     return 1 - censored[order], X[order], survival_time, at_risk - 1
 
 if __name__ == '__main__':
-    load_data()
+    # save_pickle(name='VA.pickle', p=VA)
+    # save_pickle(name='LUSC_P.pickle', p=LUSC_P)
+    # save_pickle(name='Brain_P.pickle', p=Brain_P)
+    read_pickle(name='VA.pickle')

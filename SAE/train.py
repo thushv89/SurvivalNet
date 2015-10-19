@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import matlab.engine
 
 
-def test_SdA(finetune_lr=0.01, pretraining_epochs=10, n_layers=2, pretrain_lr=1.0, training_epochs=200, batch_size=1):
+def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, pretrain_lr=1.0, training_epochs=200, batch_size=1):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
     observed, X, survival_time, at_risk_X = load_data()
     n_ins = X.shape[1]
@@ -67,17 +67,17 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=10, n_layers=2, pretrain_lr=1.
     # Pre-train layer-wise
     # de-noising level, set to zero for now
     corruption_levels = [.0] * n_layers
-    # for i in xrange(sda.n_layers):
-    #     # go through pretraining epochs
-    #     for epoch in xrange(pretraining_epochs):
-    #         # go through the training set
-    #         c = []
-    #         for batch_index in xrange(n_train_batches):
-    #             c.append(pretraining_fns[i](index=batch_index,
-    #                      corruption=corruption_levels[i],
-    #                      lr=pretrain_lr))
-    #         print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
-    #         print numpy.mean(c)
+    for i in xrange(sda.n_layers):
+        # go through pretraining epochs
+        for epoch in xrange(pretraining_epochs):
+            # go through the training set
+            c = []
+            for batch_index in xrange(n_train_batches):
+                c.append(pretraining_fns[i](index=batch_index,
+                         corruption=corruption_levels[i],
+                         lr=pretrain_lr))
+            print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
+            print numpy.mean(c)
 
     end_time = timeit.default_timer()
 
@@ -121,8 +121,6 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=10, n_layers=2, pretrain_lr=1.
     sda.logLayer.reset_weight(b)
     print numpy.dot(last_out, b)
 
-
-
     print '... finetunning the model'
     # early-stopping parameters
     c = []
@@ -133,7 +131,7 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=10, n_layers=2, pretrain_lr=1.
         avg_cost = train_fn(epoch)
         test_harzard = output_fn(epoch)
         # grad = grad_fn(epoch)
-        parameter = [param.get_value() for param in sda.params]
+        # parameter = [param.get_value() for param in sda.params]
         # print parameter[-1]
         # gradient_check(grad, parameter, sda_plus, sda_minus, train_fn_plus, train_fn_minus)
         c_index = _naive_concordance_index(test_y, test_harzard, test_observed)

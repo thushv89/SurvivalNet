@@ -1,19 +1,27 @@
 __author__ = 'Song'
 from loadData import load_training_data
+from loadMatData import load_data
 import matplotlib.pyplot as plt
 from scipy.special import expit
-from lifelines import KaplanMeierFitter
+from path import Path
 from lifelines.utils import _naive_concordance_index
-kmf = KaplanMeierFitter()
 import theano.tensor as T
 import numpy
 import theano
 from mlp import MLP
+# from lifelines import KaplanMeierFitter
+# kmf = KaplanMeierFitter()
+
+VA = Path('data/VA.mat')
+LUAD_P = Path('data/LUAD_P.mat')
+LUSC_P = Path('data/LUSC_P.mat')
+Brain_P = Path('data/Brain_P.mat')
 
 
-def main(learning_rate=0.0000025, L1_reg=0.5, L2_reg=0.75, n_epochs=300,
-             dataset='C:/Users/Song/Research/biomed/Survival/trainingData.csv', n_hidden=100):
-    train_set_x,  discrete_observed, survival_time, observed, avg_series, test_data = load_training_data(dataset)
+def main(learning_rate=0.0025, L1_reg=0.5, L2_reg=0.75, n_epochs=300,
+             dataset=LUAD_P, n_hidden=100):
+    # train_set_x,  discrete_observed, survival_time, observed, test_data = load_training_data(dataset)
+    train_set_x,  discrete_observed, survival_time, observed, test_data = load_data(dataset)
     # compute number of minibatches for training, validation and testing
     input_shape = train_set_x.shape[1]
     ######################
@@ -92,27 +100,6 @@ def main(learning_rate=0.0000025, L1_reg=0.5, L2_reg=0.75, n_epochs=300,
     plt.ylim(0.2, 0.8)
     plt.plot(range(len(c)), c, c='r', marker='o', lw=5, ms=10, mfc='c')
     plt.show()
-    # t = numpy.linspace(0, 600, 2401)
-    # p = []
-    # for time in t:
-    #     test_x = numpy.insert(test_series, 0, time)
-    #     temp = expit(numpy.dot(test_x, params[0]) + params[1])
-    #     prob = expit(numpy.dot(temp, params[2]) + params[3])
-    #     p.append(prob)
-    # y = []
-    # for i in xrange(len(t)):
-    #     j = i
-    #     y_pred = 1
-    #     while j > 0:
-    #         y_pred *= 1 - p[j]
-    #         j -= 1
-    #     y.append(y_pred)
-
-    # # plot KM
-    # kmf.fit(survival_time, event_observed=observed)
-    # kmf.survival_function_.plot(c='r')
-    # plt.plot(t, y, c='g')
-    # plt.show()
 
 
 def get_c_index(params, test_data, survival_time, observed):
