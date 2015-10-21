@@ -91,8 +91,9 @@ class HiddenLayer(object):
         self.b.set_value(params[1])
 
 
-def _dropout_from_layer(rng, layer, p):
-    """p is the probablity of dropping a unit
+def _dropout_from_layer(rng, layer, p,):
+    """
+    p is the probablity of dropping a unit
     """
     srng = theano.tensor.shared_randomstreams.RandomStreams(
             rng.randint(999999))
@@ -105,13 +106,14 @@ def _dropout_from_layer(rng, layer, p):
 
 
 class DropoutHiddenLayer(HiddenLayer):
-    def __init__(self, rng, input, n_in, n_out,
+    def __init__(self, rng, input, n_in, n_out, is_train,
                  activation, dropout_rate, W=None, b=None):
         super(DropoutHiddenLayer, self).__init__(
                 rng=rng, input=input, n_in=n_in, n_out=n_out, W=W, b=b,
                 activation=activation)
-
-        self.output = _dropout_from_layer(rng, self.output, p=dropout_rate)
+        train_output = _dropout_from_layer(rng, self.output, p=dropout_rate)
+        output = self.output * (1 - dropout_rate)
+        self.output = T.switch(T.neq(is_train, 0), train_output, output)
 
 
 # start-snippet-2

@@ -30,7 +30,7 @@ def fill_na_with_mean(column):
     return avg
 
 
-def discrete_time_data(old_x, observed, start=0.1):
+def discrete_time_data(old_x, observed, start=1.0):
     x = []
     new_observed = []
     # each entry in x is a list of all time prior than x
@@ -54,7 +54,7 @@ def discrete_time_data(old_x, observed, start=0.1):
     return np.asarray(x), np.asarray(new_observed)
 
 
-def load_training_data(dataset):
+def load_training_data(dataset, step=7.0):
     print 'loading data'
     p = Path(dataset)
     df = pd.read_csv(p, index_col=0)
@@ -91,7 +91,7 @@ def load_training_data(dataset):
     test_size = len(df) / 3
     test_x = np.asarray(df[:test_size])
     train_x = df[test_size:]
-    train_x, train_observed = discrete_time_data(train_x, observed)
+    train_x, train_observed = discrete_time_data(train_x, observed, start=step)
     test_observed = observed[:test_size]
     test_y = t_column[:test_size]
     return train_x, train_observed, test_y, test_observed, test_x

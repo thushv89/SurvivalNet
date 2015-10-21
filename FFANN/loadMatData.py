@@ -61,7 +61,7 @@ def load_mat_data(p):
     censored = np.asarray([c[0] for c in C], dtype='int32')
     survival_time = np.asarray(survival_time[0])
     # print survival_time
-    return 1 - censored[order], X[order], survival_time
+    return 1 - censored[order], X[order].astype(float), survival_time
 
 
 def save_csv(name="LUAD_P.csv", p=LUAD_P):

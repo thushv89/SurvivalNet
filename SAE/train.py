@@ -4,16 +4,18 @@ import os
 import sys
 import timeit
 import copy
-# from loadData import load_data
 from loadMatData import load_data
 from SdA import SdA
 import numpy
 from lifelines.utils import _naive_concordance_index
 import matplotlib.pyplot as plt
 import matlab.engine
+import theano.tensor as T
+import theano
 
 
-def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, pretrain_lr=1.0, training_epochs=200, batch_size=1):
+def test_SdA(finetune_lr=0.01, pretraining_epochs=100, n_layers=3, n_hidden=140,
+             pretrain_lr=1.0, training_epochs=200, batch_size=2, drop_out=True, dropout_rate=0.3):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
     observed, X, survival_time, at_risk_X = load_data()
     n_ins = X.shape[1]
@@ -25,6 +27,8 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, pretrain_lr=1.
     test_X = X[:test_size]
     test_y = survival_time[:test_size]
     n_train_batches = len(train_X) / batch_size
+    # changed to theano shared variable in order to do minibatch
+    train_X = theano.shared(value=train_X, name='train_X')
     # numpy random generator
     # start-snippet-3
     numpy_rng = numpy.random.RandomState(89677)
@@ -33,8 +37,10 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, pretrain_lr=1.
     sda = SdA(
         numpy_rng=numpy_rng,
         n_ins=n_ins,
-        hidden_layers_sizes=[140] * n_layers,
+        hidden_layers_sizes=[n_hidden] * n_layers,
         n_outs=1,
+        drop_out=drop_out,
+        dropout_rate=dropout_rate,
         at_risk=at_risk_X
     )
 
@@ -119,7 +125,7 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, pretrain_lr=1.
     b = eng.coxphfit(cox_x, cox_y, 'censoring', cox_c)
     b = numpy.asarray([[w[0] for w in b]]).T
     sda.logLayer.reset_weight(b)
-    print numpy.dot(last_out, b)
+    # print numpy.dot(last_out, b)
 
     print '... finetunning the model'
     # early-stopping parameters
@@ -139,6 +145,7 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, pretrain_lr=1.
         cost_list.append(avg_cost)
         print 'at epoch %d, cost is %f, test c_index is %f' % (epoch, avg_cost, c_index)
     # plt.ylim(0.2, 0.8)
+    print 'best score is: %f' % max(c)
     plt.plot(range(len(c)), c, c='r', marker='o', lw=5, ms=10, mfc='c')
     plt.show()
     plt.plot(range(len(cost_list)), cost_list, c='r', marker='o', lw=5, ms=10, mfc='c')

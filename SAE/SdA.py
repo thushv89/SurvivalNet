@@ -46,7 +46,8 @@ class SdA(object):
         self.dA_layers = []
         self.params = []
         self.n_layers = len(hidden_layers_sizes)
-
+        self.drop_out = drop_out
+        self.is_train = T.iscalar('is_train')
         assert self.n_layers > 0
 
         if not theano_rng:
@@ -90,7 +91,8 @@ class SdA(object):
                                         n_in=input_size,
                                         n_out=hidden_layers_sizes[i],
                                         activation=T.nnet.sigmoid,
-                                        dropout_rate=dropout_rate) \
+                                        dropout_rate=dropout_rate,
+                                        is_train=self.is_train) \
                 if drop_out else HiddenLayer(rng=numpy_rng,
                                         input=layer_input,
                                         n_in=input_size,
@@ -155,7 +157,8 @@ class SdA(object):
                 outputs=cost,
                 updates=updates,
                 givens={
-                    self.x: train_set_x
+                    self.x: train_set_x[batch_begin: batch_end],
+                    self.is_train: numpy.cast['int32'](1)
                 }
             )
             # append `fn` to the list of functions
@@ -164,7 +167,6 @@ class SdA(object):
         return pretrain_fns
 
     def build_finetune_functions(self, train_X, test_X, train_observed, learning_rate):
-
         index = T.lscalar('index')  # index to a [mini]batch
 
         # compute the gradients with respect to the model parameters
@@ -186,7 +188,8 @@ class SdA(object):
             updates=updates,
             givens={
                 self.x: train_X,
-                self.o: train_observed
+                self.o: train_observed,
+                self.is_train: numpy.cast['int32'](1)
             },
             name='train'
         )
@@ -197,7 +200,9 @@ class SdA(object):
             outputs=self.logLayer.output,
             givens={
                 self.x: test_X,
-                self.o: train_observed
+                self.o: train_observed,
+                self.is_train: numpy.cast['int32'](0)
+
             },
             name='output'
         )
@@ -208,7 +213,8 @@ class SdA(object):
             outputs=gparams,
             givens={
                 self.x: train_X,
-                self.o: train_observed
+                self.o: train_observed,
+                self.is_train: numpy.cast['int32'](0)
             },
             name='output'
         )
@@ -219,7 +225,8 @@ class SdA(object):
             outputs=self.logLayer.input,
             givens={
                 self.x: train_X,
-                self.o: train_observed
+                self.o: train_observed,
+                self.is_train: numpy.cast['int32'](0)
             },
             name='last_output'
         )
