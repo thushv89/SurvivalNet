@@ -66,7 +66,7 @@ def load_augment_data(p=LUAD_P):
     at_risk_X = np.asarray(eng.ismember(temp, temp, nargout=2)[1][0]).astype(int) - 1
     train_T = np.asarray(survival_time[0])
     train_O = 1 - np.asarray(train_C)[order]
-    return train_X[order], train_T, train_O, at_risk_X, test_X, test_T, test_C
+    return train_X[order], train_T, train_O, at_risk_X, test_X, test_T, 1 - test_C
 
 
 def load_data(p=LUAD_P):

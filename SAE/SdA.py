@@ -21,6 +21,7 @@ class SdA(object):
         corruption_levels=[0.1, 0.1],
         at_risk=None,
         drop_out=False,
+        pretrain_dropout=False,
         dropout_rate=0.1
     ):
         """ This class is made to support a variable number of layers.
@@ -47,7 +48,9 @@ class SdA(object):
         self.params = []
         self.n_layers = len(hidden_layers_sizes)
         self.drop_out = drop_out
+        self.pretrain_dropout = pretrain_dropout
         self.is_train = T.iscalar('is_train')
+        self.is_pretrain = T.iscalar('is_train')
         assert self.n_layers > 0
 
         if not theano_rng:
@@ -92,7 +95,8 @@ class SdA(object):
                                         n_out=hidden_layers_sizes[i],
                                         activation=T.nnet.sigmoid,
                                         dropout_rate=dropout_rate,
-                                        is_train=self.is_train) \
+                                        is_train=self.is_train,
+                                        is_pretrain=self.is_pretrain) \
                 if drop_out else HiddenLayer(rng=numpy_rng,
                                         input=layer_input,
                                         n_in=input_size,
@@ -140,6 +144,12 @@ class SdA(object):
         batch_begin = index * batch_size
         # ending of a batch given `index`
         batch_end = batch_begin + batch_size
+        if self.pretrain_dropout:
+            is_pretrain = numpy.cast['int32'](0)
+            is_train = numpy.cast['int32'](1)
+        else:
+            is_pretrain = numpy.cast['int32'](1)
+            is_train = numpy.cast['int32'](0)
 
         pretrain_fns = []
         for dA in self.dA_layers:
@@ -157,8 +167,9 @@ class SdA(object):
                 outputs=cost,
                 updates=updates,
                 givens={
-                    self.x: train_set_x[batch_begin: batch_end],
-                    self.is_train: numpy.cast['int32'](1)
+                    self.x: train_set_x,   #[batch_begin: batch_end],
+                    self.is_pretrain: is_pretrain,
+                    self.is_train: is_train
                 }
             )
             # append `fn` to the list of functions
@@ -168,7 +179,12 @@ class SdA(object):
 
     def build_finetune_functions(self, train_X, test_X, train_observed, learning_rate):
         index = T.lscalar('index')  # index to a [mini]batch
-
+        if self.drop_out:
+            pretrain = numpy.cast['int32'](0)
+        else:
+            pretrain = numpy.cast['int32'](1)
+        is_train = numpy.cast['int32'](1)
+        is_test = numpy.cast['int32'](0)
         # compute the gradients with respect to the model parameters
         gparams = T.grad(self.finetune_cost, self.params)
 
@@ -189,7 +205,8 @@ class SdA(object):
             givens={
                 self.x: train_X,
                 self.o: train_observed,
-                self.is_train: numpy.cast['int32'](1)
+                self.is_pretrain: pretrain,
+                self.is_train: is_train
             },
             name='train'
         )
@@ -201,7 +218,8 @@ class SdA(object):
             givens={
                 self.x: test_X,
                 self.o: train_observed,
-                self.is_train: numpy.cast['int32'](0)
+                self.is_pretrain: pretrain,
+                self.is_train: is_test
 
             },
             name='output'
@@ -214,7 +232,8 @@ class SdA(object):
             givens={
                 self.x: train_X,
                 self.o: train_observed,
-                self.is_train: numpy.cast['int32'](0)
+                self.is_pretrain: pretrain,
+                self.is_train: is_test
             },
             name='output'
         )
@@ -226,7 +245,8 @@ class SdA(object):
             givens={
                 self.x: train_X,
                 self.o: train_observed,
-                self.is_train: numpy.cast['int32'](0)
+                self.is_pretrain: is_train,     # should initialize for coxphfit go through dropout? Set to not now
+                self.is_train: is_test
             },
             name='last_output'
         )

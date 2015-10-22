@@ -4,28 +4,31 @@ import os
 import sys
 import timeit
 import copy
-from loadMatData import load_data
+from loadMatData import load_data, load_augment_data
 from SdA import SdA
 import numpy
 from lifelines.utils import _naive_concordance_index
 import matplotlib.pyplot as plt
 import matlab.engine
-import theano.tensor as T
 import theano
 
 
-def test_SdA(finetune_lr=0.01, pretraining_epochs=100, n_layers=3, n_hidden=140,
-             pretrain_lr=1.0, training_epochs=200, batch_size=2, drop_out=True, dropout_rate=0.3):
+def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
+             pretrain_lr=1.0, training_epochs=200, batch_size=2, augment=False,
+             drop_out=True, pretrain_dropout=False, dropout_rate=0.3):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
-    observed, X, survival_time, at_risk_X = load_data()
-    n_ins = X.shape[1]
-    test_size = len(X) / 3
-    train_X = X[test_size:]
-    train_y = survival_time[test_size:]
-    train_observed = observed[test_size:]
-    test_observed = observed[:test_size]
-    test_X = X[:test_size]
-    test_y = survival_time[:test_size]
+    if augment:
+        train_X, train_y, train_observed, at_risk_X, test_X, test_y, test_observed = load_augment_data()
+    else:
+        observed, X, survival_time, at_risk_X = load_data()
+        test_size = len(X) / 3
+        train_X = X[test_size:]
+        train_y = survival_time[test_size:]
+        train_observed = observed[test_size:]
+        test_observed = observed[:test_size]
+        test_X = X[:test_size]
+        test_y = survival_time[:test_size]
+    n_ins = train_X.shape[1]
     n_train_batches = len(train_X) / batch_size
     # changed to theano shared variable in order to do minibatch
     train_X = theano.shared(value=train_X, name='train_X')
@@ -40,6 +43,7 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=100, n_layers=3, n_hidden=140,
         hidden_layers_sizes=[n_hidden] * n_layers,
         n_outs=1,
         drop_out=drop_out,
+        pretrain_dropout=pretrain_dropout,
         dropout_rate=dropout_rate,
         at_risk=at_risk_X
     )
