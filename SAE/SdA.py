@@ -167,7 +167,7 @@ class SdA(object):
                 outputs=cost,
                 updates=updates,
                 givens={
-                    self.x: train_set_x,   #[batch_begin: batch_end],
+                    self.x: train_set_x[batch_begin: batch_end],
                     self.is_pretrain: is_pretrain,
                     self.is_train: is_train
                 }

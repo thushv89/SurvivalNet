@@ -1,15 +1,14 @@
 __author__ = 'Song'
 import scipy.io as sio
-from path import Path
 import matlab.engine
 import numpy as np
 import cPickle
 
 
-VA = Path('data/VA.mat')
-LUAD_P = Path('data/LUAD_P.mat')
-LUSC_P = Path('data/LUSC_P.mat')
-Brain_P = Path('data/Brain_P.mat')
+VA = 'data/VA.mat'
+LUAD_P = 'data/LUAD_P.mat'
+LUSC_P = 'data/LUSC_P.mat'
+Brain_P = 'data/Brain_P.mat'
 
 
 def save_pickle(name='LUAD_P.pickle', p=LUAD_P):
@@ -53,10 +52,10 @@ def load_augment_data(p=LUAD_P):
     test_size = len(X) / 3
     train_X = X[test_size:]
     train_T = [t[0] for t in T[test_size:]]
-    train_C = [c[0] for c in C[test_size:]]
+    train_C = np.asarray([c[0] for c in C[test_size:]], dtype='int32')
     test_X = X[:test_size]
     test_T = np.asarray([t[0] for t in T[:test_size]])
-    test_C = np.asarray([c[0] for c in C[:test_size]])
+    test_C = np.asarray([c[0] for c in C[:test_size]], dtype='int32')
     train_X, train_T, train_C = augment_data(train_X, train_T, train_C)
     survival_time = train_T
     mat_T = matlab.double(survival_time)
