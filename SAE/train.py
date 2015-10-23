@@ -18,7 +18,7 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
              pretrain_lr=1.0, training_epochs=200, batch_size=2, augment=False,
              drop_out=True, pretrain_dropout=False, dropout_rate=0.3, resultPath = ' '):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
-    expID = 'ftlr' + str(finetune_lr) + '-' + 'pt' + str(pretraining_epochs) + '-' + 'nl' + str(n_layers) + '-' + 'hs' + str(hSize) + '-' + \
+    expID = 'ftlr' + str(finetune_lr) + '-' + 'pt' + str(pretraining_epochs) + '-' + 'nl' + str(n_layers) + '-' + 'hs' + str(n_hidden) + '-' + \
     'ptlr' + str(pretrain_lr) + '-' + 'ft' + str(training_epochs) + '-' + 'bs' + str(batch_size) + '-' +  'au' + str(augment) + '-' + \
     'dor'+ str(dropout_rate) + '-' + 'do'+ str(drop_out) + str(pretrain_dropout)       
     print expID     
