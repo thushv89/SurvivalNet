@@ -13,9 +13,9 @@ import matlab.engine
 import theano
 
 
-def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
-             pretrain_lr=1.0, training_epochs=200, batch_size=2, augment=False,
-             drop_out=True, pretrain_dropout=False, dropout_rate=0.3):
+def test_SdA(finetune_lr=0.0001, pretrain=True, pretraining_epochs=50, n_layers=12, n_hidden=100, coxphfit=True,
+             pretrain_lr=0.5, training_epochs=300, pretrain_mini_batch=True, batch_size=100, augment=False,
+             drop_out=False, pretrain_dropout=False, dropout_rate=0.2):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
     if augment:
         train_X, train_y, train_observed, at_risk_X, test_X, test_y, test_observed = load_augment_data()
@@ -29,7 +29,7 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
         test_X = X[:test_size]
         test_y = survival_time[:test_size]
     n_ins = train_X.shape[1]
-    n_train_batches = len(train_X) / batch_size
+    n_train_batches = len(train_X) / batch_size if pretrain_mini_batch else 1
     # changed to theano shared variable in order to do minibatch
     train_X = theano.shared(value=train_X, name='train_X')
     # numpy random generator
@@ -68,32 +68,34 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
     #########################
     # PRETRAINING THE MODEL #
     #########################
-    print '... getting the pretraining functions'
-    pretraining_fns = sda.pretraining_functions(train_set_x=train_X,
-                                                batch_size=batch_size)
+    if pretrain:
+        print '... getting the pretraining functions'
+        pretraining_fns = sda.pretraining_functions(train_set_x=train_X,
+                                                    batch_size=batch_size,
+                                                    pretrain_mini_batch=pretrain_mini_batch)
 
-    print '... pre-training the model'
-    start_time = timeit.default_timer()
-    # Pre-train layer-wise
-    # de-noising level, set to zero for now
-    corruption_levels = [.0] * n_layers
-    for i in xrange(sda.n_layers):
-        # go through pretraining epochs
-        for epoch in xrange(pretraining_epochs):
-            # go through the training set
-            c = []
-            for batch_index in xrange(n_train_batches):
-                c.append(pretraining_fns[i](index=batch_index,
-                         corruption=corruption_levels[i],
-                         lr=pretrain_lr))
-            print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
-            print numpy.mean(c)
+        print '... pre-training the model'
+        start_time = timeit.default_timer()
+        # Pre-train layer-wise
+        # de-noising level, set to zero for now
+        corruption_levels = [.0] * n_layers
+        for i in xrange(sda.n_layers):
+            # go through pretraining epochs
+            for epoch in xrange(pretraining_epochs):
+                # go through the training set
+                c = []
+                for batch_index in xrange(n_train_batches):
+                    c.append(pretraining_fns[i](index=batch_index,
+                             corruption=corruption_levels[i],
+                             lr=pretrain_lr))
+                print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
+                print numpy.mean(c)
 
-    end_time = timeit.default_timer()
+        end_time = timeit.default_timer()
 
-    print >> sys.stderr, ('The pretraining code for file ' +
-                          os.path.split(__file__)[1] +
-                          ' ran for %.2fm' % ((end_time - start_time) / 60.))
+        print >> sys.stderr, ('The pretraining code for file ' +
+                              os.path.split(__file__)[1] +
+                              ' ran for %.2fm' % ((end_time - start_time) / 60.))
     # end-snippet-4
     ########################
     # FINETUNING THE MODEL #
@@ -121,15 +123,16 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
     # )
 
     # cox initialization
-    last_out = last_out_fn(0)
-    eng = matlab.engine.start_matlab()
-    cox_x = matlab.double(last_out.tolist())
-    cox_y = matlab.double(train_y.tolist())
-    cox_c = matlab.double((1 - train_observed).tolist())
-    b = eng.coxphfit(cox_x, cox_y, 'censoring', cox_c)
-    b = numpy.asarray([[w[0] for w in b]]).T
-    sda.logLayer.reset_weight(b)
-    # print numpy.dot(last_out, b)
+    if coxphfit:
+        last_out = last_out_fn(0)
+        eng = matlab.engine.start_matlab()
+        cox_x = matlab.double(last_out.tolist())
+        cox_y = matlab.double(train_y.tolist())
+        cox_c = matlab.double((1 - train_observed).tolist())
+        b = eng.coxphfit(cox_x, cox_y, 'censoring', cox_c)
+        b = numpy.asarray([[w[0] for w in b]]).T
+        sda.logLayer.reset_weight(b)
+        # print numpy.dot(last_out, b)
 
     print '... finetunning the model'
     # early-stopping parameters

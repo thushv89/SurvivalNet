@@ -99,6 +99,7 @@ def _dropout_from_layer(rng, layer, p):
             rng.randint(999999))
     # p=1-p because 1's indicate keep and p is prob of dropping
     mask = srng.binomial(n=1, p=1-p, size=layer.shape)
+    # check = theano.printing.Print('mask')(mask)
     # The cast is important because
     # int * float32 = float64 which pulls things off the gpu
     output = layer * T.cast(mask, theano.config.floatX)
@@ -106,15 +107,15 @@ def _dropout_from_layer(rng, layer, p):
 
 
 class DropoutHiddenLayer(HiddenLayer):
-    def __init__(self, rng, input, n_in, n_out, is_train, is_pretrain,
+    def __init__(self, rng, input, n_in, n_out, is_train, pretrain_dropout,
                  activation, dropout_rate, W=None, b=None):
         super(DropoutHiddenLayer, self).__init__(
                 rng=rng, input=input, n_in=n_in, n_out=n_out, W=W, b=b,
                 activation=activation)
         train_output = _dropout_from_layer(rng, self.output, p=dropout_rate)
-        output = self.output * (1 - dropout_rate)
-        self.output = T.switch(T.neq(is_pretrain, 0), self.output,  # pretrain equals not dropout
-                               T.switch(T.neq(is_train, 0), train_output, output))
+        test_output = self.output * (1 - dropout_rate)
+        self.output = T.switch(T.eq(pretrain_dropout, 0), self.output,  # if not pretrain
+                               T.switch(T.eq(is_train, 1), train_output, test_output))   # if train
 
 
 # start-snippet-2

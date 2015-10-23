@@ -40,7 +40,6 @@ def augment_data(train_X, train_T, train_C):
             Xa[:, i] = np.concatenate((train_X[:, i], noise_X))
         else:
             Xa[:, i] = np.concatenate((train_X[:, i], train_X[:, i]))
-    print Xa
     return Xa, train_T * 2, train_C * 2
 
 
@@ -56,7 +55,7 @@ def load_augment_data(p=LUAD_P):
     train_C = [c[0] for c in C[test_size:]]
     test_X = X[:test_size]
     test_T = np.asarray([t[0] for t in T[:test_size]])
-    test_C = np.asarray([c[0] for c in C[:test_size]])
+    test_C = np.asarray([c[0] for c in C[:test_size]], dtype='int32')
     train_X, train_T, train_C = augment_data(train_X, train_T, train_C)
     survival_time = train_T
     mat_T = matlab.double(survival_time)
@@ -65,7 +64,7 @@ def load_augment_data(p=LUAD_P):
     temp = matlab.double(survival_time[0])
     at_risk_X = np.asarray(eng.ismember(temp, temp, nargout=2)[1][0]).astype(int) - 1
     train_T = np.asarray(survival_time[0])
-    train_O = 1 - np.asarray(train_C)[order]
+    train_O = 1 - np.asarray(train_C, dtype='int32')[order]
     return train_X[order], train_T, train_O, at_risk_X, test_X, test_T, 1 - test_C
 
 

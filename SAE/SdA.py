@@ -50,7 +50,7 @@ class SdA(object):
         self.drop_out = drop_out
         self.pretrain_dropout = pretrain_dropout
         self.is_train = T.iscalar('is_train')
-        self.is_pretrain = T.iscalar('is_train')
+        self.is_pretrain_dropout = T.iscalar('is_pretrain_dropout')
         assert self.n_layers > 0
 
         if not theano_rng:
@@ -96,7 +96,7 @@ class SdA(object):
                                         activation=T.nnet.sigmoid,
                                         dropout_rate=dropout_rate,
                                         is_train=self.is_train,
-                                        is_pretrain=self.is_pretrain) \
+                                        pretrain_dropout=self.is_pretrain_dropout) \
                 if drop_out else HiddenLayer(rng=numpy_rng,
                                         input=layer_input,
                                         n_in=input_size,
@@ -135,7 +135,7 @@ class SdA(object):
         self.finetune_cost = self.logLayer.cost(self.o, at_risk)
         self.last_gradient = self.logLayer.gradient(self.o, at_risk)
 
-    def pretraining_functions(self, train_set_x, batch_size):
+    def pretraining_functions(self, train_set_x, batch_size, pretrain_mini_batch):
         # index to a [mini]batch
         index = T.lscalar('index')  # index to a minibatch
         corruption_level = T.scalar('corruption')  # % of corruption to use
@@ -145,12 +145,13 @@ class SdA(object):
         # ending of a batch given `index`
         batch_end = batch_begin + batch_size
         if self.pretrain_dropout:
-            is_pretrain = numpy.cast['int32'](0)
+            is_pretrain_dropout = numpy.cast['int32'](1)
             is_train = numpy.cast['int32'](1)
         else:
-            is_pretrain = numpy.cast['int32'](1)
-            is_train = numpy.cast['int32'](0)
-
+            is_pretrain_dropout = numpy.cast['int32'](0)
+            is_train = numpy.cast['int32'](0)   # value does not matter
+        if pretrain_mini_batch:
+            train_set_x = train_set_x[batch_begin: batch_end]
         pretrain_fns = []
         for dA in self.dA_layers:
             # get the cost and the updates list
@@ -167,8 +168,8 @@ class SdA(object):
                 outputs=cost,
                 updates=updates,
                 givens={
-                    self.x: train_set_x,   #[batch_begin: batch_end],
-                    self.is_pretrain: is_pretrain,
+                    self.x: train_set_x,
+                    self.is_pretrain_dropout: is_pretrain_dropout,
                     self.is_train: is_train
                 }
             )
@@ -179,12 +180,8 @@ class SdA(object):
 
     def build_finetune_functions(self, train_X, test_X, train_observed, learning_rate):
         index = T.lscalar('index')  # index to a [mini]batch
-        if self.drop_out:
-            pretrain = numpy.cast['int32'](0)
-        else:
-            pretrain = numpy.cast['int32'](1)
+        pretrain = numpy.cast['int32'](0)   # pretrain set to 0
         is_train = numpy.cast['int32'](1)
-        is_test = numpy.cast['int32'](0)
         # compute the gradients with respect to the model parameters
         gparams = T.grad(self.finetune_cost, self.params)
 
@@ -205,7 +202,7 @@ class SdA(object):
             givens={
                 self.x: train_X,
                 self.o: train_observed,
-                self.is_pretrain: pretrain,
+                self.is_pretrain_dropout: 1 - pretrain,
                 self.is_train: is_train
             },
             name='train'
@@ -218,8 +215,8 @@ class SdA(object):
             givens={
                 self.x: test_X,
                 self.o: train_observed,
-                self.is_pretrain: pretrain,
-                self.is_train: is_test
+                self.is_pretrain_dropout: 1 - pretrain,
+                self.is_train: 1 - is_train
 
             },
             name='output'
@@ -232,8 +229,8 @@ class SdA(object):
             givens={
                 self.x: train_X,
                 self.o: train_observed,
-                self.is_pretrain: pretrain,
-                self.is_train: is_test
+                self.is_pretrain_dropout: 1 - pretrain,
+                self.is_train: 1 - is_train
             },
             name='output'
         )
@@ -245,8 +242,8 @@ class SdA(object):
             givens={
                 self.x: train_X,
                 self.o: train_observed,
-                self.is_pretrain: is_train,     # should initialize for coxphfit go through dropout? Set to not now
-                self.is_train: is_test
+                self.is_pretrain_dropout: numpy.cast['int32'](0),   # should initialize for coxphfit go through dropout? Set to not now
+                self.is_train: 1 - is_train
             },
             name='last_output'
         )
