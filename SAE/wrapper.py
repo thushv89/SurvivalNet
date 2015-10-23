@@ -17,8 +17,8 @@ def wrapper():
     if not os.path.exists(pathout):
         os.makedirs(pathout)
         
-    layers = [2, 4, 6, 8, 10]
-    hSizes = [60]
+    layers = [2]
+    hSizes = [20]
     #do_rates = [.7, .5, .3, .1, 0]
     do_rates = [0]
     for hSize in hSizes:
@@ -26,7 +26,8 @@ def wrapper():
             for do_rate in do_rates:
                 t = time.time()
                 test_SdA(finetune_lr=0.001, pretraining_epochs=200, n_layers=n_layer,\
-                pretrain_lr=1.0, training_epochs=200, batch_size=2, augment = False, drop_out = False, pretrain_dropout=False, dropout_rate= do_rate, hSize = hSize, \
+                n_hidden = hSize, pretrain_lr=1.0, training_epochs=200, batch_size=100, \
+                augment = False, drop_out = True, pretrain_dropout=False, dropout_rate= do_rate, \
                 resultPath = pathout)
                 elapsed = time.time() - t
                 print 'Elapsed: %s' %elapsed                

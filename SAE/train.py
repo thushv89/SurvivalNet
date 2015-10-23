@@ -16,7 +16,7 @@ import cPickle
 
 def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
              pretrain_lr=1.0, training_epochs=200, batch_size=2, augment=False,
-             drop_out=True, pretrain_dropout=False, dropout_rate=0.3, hSize = 60, resultPath = ' '):
+             drop_out=True, pretrain_dropout=False, dropout_rate=0.3, resultPath = ' '):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
     expID = 'ftlr' + str(finetune_lr) + '-' + 'pt' + str(pretraining_epochs) + '-' + 'nl' + str(n_layers) + '-' + 'hs' + str(hSize) + '-' + \
     'ptlr' + str(pretrain_lr) + '-' + 'ft' + str(training_epochs) + '-' + 'bs' + str(batch_size) + '-' +  'au' + str(augment) + '-' + \
@@ -119,13 +119,13 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
         test_X=test_X,
         learning_rate=finetune_lr
     )
-    train_fn_plus, output_fn_plus, grad_fn_plus = sda_plus.build_finetune_functions(
+    train_fn_plus, output_fn_plus, grad_fn_plus, last_out_fn_plus = sda_plus.build_finetune_functions(
         train_X=train_X,
         train_observed=train_observed,
         test_X=test_X,
         learning_rate=finetune_lr
     )
-    train_fn_minus, output_fn_minus, grad_fn_minus = sda_minus.build_finetune_functions(
+    train_fn_minus, output_fn_minus, grad_fn_minus, last_out_fn_minus = sda_minus.build_finetune_functions(
         train_X=train_X,
         train_observed=train_observed,
         test_X=test_X,
@@ -141,8 +141,9 @@ def test_SdA(finetune_lr=0.01, pretraining_epochs=40, n_layers=3, n_hidden=140,
     b = eng.coxphfit(cox_x, cox_y, 'censoring', cox_c)
     b = numpy.asarray([[w[0] for w in b]]).T
     sda.logLayer.reset_weight(b)
-    # print numpy.dot(last_out, b)
-
+    print numpy.dot(last_out, b)
+    print b
+    print last_out
     print '... finetunning the model'
     # early-stopping parameters
     c = []

@@ -114,7 +114,7 @@ class DropoutHiddenLayer(HiddenLayer):
         train_output = _dropout_from_layer(rng, self.output, p=dropout_rate)
         output = self.output * (1 - dropout_rate)
         self.output = T.switch(T.neq(is_pretrain, 0), self.output,  # pretrain equals not dropout
-                               T.switch(T.neq(is_train, 0),  output, train_output))
+                               T.switch(T.neq(is_train, 0), train_output, output))
 
 
 # start-snippet-2
