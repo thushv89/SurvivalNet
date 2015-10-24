@@ -13,9 +13,9 @@ import matlab.engine
 import theano
 
 
-def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3, n_hidden=150, coxphfit=False,
+def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3, n_hidden=120, coxphfit=True,
              pretrain_lr=0.5, training_epochs=600, pretrain_mini_batch=False, batch_size=100, augment=False,
-             drop_out=False, pretrain_dropout=False, dropout_rate=0.7):
+             drop_out=True, pretrain_dropout=False, dropout_rate=0.5, grad_check=False, plot=False):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
     if augment:
         train_X, train_y, train_observed, at_risk_X, test_X, test_y, test_observed = load_augment_data()
@@ -47,22 +47,22 @@ def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3,
         dropout_rate=dropout_rate,
         at_risk=at_risk_X
     )
+    if grad_check:
+        sda_plus = SdA(
+            numpy_rng=numpy_rng,
+            n_ins=n_ins,
+            hidden_layers_sizes=[140] * n_layers,
+            n_outs=1,
+            at_risk=at_risk_X
+        )
 
-    # sda_plus = SdA(
-    #     numpy_rng=numpy_rng,
-    #     n_ins=n_ins,
-    #     hidden_layers_sizes=[140] * n_layers,
-    #     n_outs=1,
-    #     at_risk=at_risk_X
-    # )
-    #
-    # sda_minus = SdA(
-    #     numpy_rng=numpy_rng,
-    #     n_ins=n_ins,
-    #     hidden_layers_sizes=[140] * n_layers,
-    #     n_outs=1,
-    #     at_risk=at_risk_X
-    # )
+        sda_minus = SdA(
+            numpy_rng=numpy_rng,
+            n_ins=n_ins,
+            hidden_layers_sizes=[140] * n_layers,
+            n_outs=1,
+            at_risk=at_risk_X
+        )
 
     # end-snippet-3 start-snippet-4
     #########################
@@ -111,18 +111,19 @@ def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3,
         test_X=test_X,
         learning_rate=finetune_lr
     )
-    # train_fn_plus, output_fn_plus, grad_fn_plus = sda_plus.build_finetune_functions(
-    #     train_X=train_X,
-    #     train_observed=train_observed,
-    #     test_X=test_X,
-    #     learning_rate=finetune_lr
-    # )
-    # train_fn_minus, output_fn_minus, grad_fn_minus = sda_minus.build_finetune_functions(
-    #     train_X=train_X,
-    #     train_observed=train_observed,
-    #     test_X=test_X,
-    #     learning_rate=finetune_lr
-    # )
+    if grad_check:
+        train_fn_plus, output_fn_plus, grad_fn_plus, last_out_fn_plus = sda_plus.build_finetune_functions(
+            train_X=train_X,
+            train_observed=train_observed,
+            test_X=test_X,
+            learning_rate=finetune_lr
+        )
+        train_fn_minus, output_fn_minus, grad_fn_minus, last_out_fn_minus = sda_minus.build_finetune_functions(
+            train_X=train_X,
+            train_observed=train_observed,
+            test_X=test_X,
+            learning_rate=finetune_lr
+        )
 
     # cox initialization
     if coxphfit:
@@ -145,20 +146,22 @@ def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3,
         epoch += 1
         avg_cost = train_fn(epoch)
         test_harzard = output_fn(epoch)
-        # grad = grad_fn(epoch)
-        # parameter = [param.get_value() for param in sda.params]
-        # print parameter[-1]
-        # gradient_check(grad, parameter, sda_plus, sda_minus, train_fn_plus, train_fn_minus)
+        if grad_check:
+            grad = grad_fn(epoch)
+            parameter = [param.get_value() for param in sda.params]
+            gradient_check(grad, parameter, sda_plus, sda_minus, train_fn_plus, train_fn_minus)
         c_index = _naive_concordance_index(test_y, test_harzard, test_observed)
         c.append(c_index)
         cost_list.append(avg_cost)
         print 'at epoch %d, cost is %f, test c_index is %f' % (epoch, avg_cost, c_index)
     # plt.ylim(0.2, 0.8)
     print 'best score is: %f' % max(c)
-    plt.plot(range(len(c)), c, c='r', marker='o', lw=5, ms=10, mfc='c')
-    plt.show()
-    plt.plot(range(len(cost_list)), cost_list, c='r', marker='o', lw=5, ms=10, mfc='c')
-    plt.show()
+    if plot:
+        plt.plot(range(len(c)), c, c='r', marker='o', lw=5, ms=10, mfc='c')
+        plt.show()
+        plt.plot(range(len(cost_list)), cost_list, c='r', marker='o', lw=5, ms=10, mfc='c')
+        plt.show()
+    return cost_list, c
 
 
 def gradient_check(grad, parameter, sda_plus, sda_minus, train_fn_plus, train_fn_minus, e=0.01**2, epoch=1):
@@ -209,4 +212,13 @@ def gradient_check(grad, parameter, sda_plus, sda_minus, train_fn_plus, train_fn
                     print diff / grad[l][i][j] * 100
 
 if __name__ == '__main__':
-    test_SdA()
+    markers = ['o', '*', '^', '.', 'v']
+    colors = ['r', 'b', 'g', 'm', 'c']
+    labels = ['.7', '.5', '.3', '.1', '0.0']
+    do_rates = [.7, .5, .3, .1, 0]
+    for i in xrange(len(do_rates)):
+        cost_list, c = test_SdA(dropout_rate=do_rates[i], coxphfit=False)
+        plt.plot(range(len(cost_list)), cost_list, c=colors[i], marker=markers[i], lw=5, ms=10, mfc=colors[i],
+                 label=labels[i])
+    plt.legend(labels, loc=4, fontsize='x-large')
+    plt.show()
