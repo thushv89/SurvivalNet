@@ -90,6 +90,11 @@ class HiddenLayer(object):
         self.W.set_value(params[0])
         self.b.set_value(params[1])
 
+    def reset_weight_by_rate(self, rate):
+        if rate != 0:
+            self.W.set_value(self.W.get_value() / rate)
+            self.b.set_value(self.b.get_value() / rate)
+
 
 def _dropout_from_layer(rng, layer, p):
     """

@@ -13,9 +13,9 @@ import matlab.engine
 import theano
 
 
-def test_SdA(finetune_lr=0.0001, pretrain=True, pretraining_epochs=50, n_layers=12, n_hidden=100, coxphfit=True,
-             pretrain_lr=0.5, training_epochs=300, pretrain_mini_batch=True, batch_size=100, augment=False,
-             drop_out=False, pretrain_dropout=False, dropout_rate=0.2):
+def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3, n_hidden=150, coxphfit=False,
+             pretrain_lr=0.5, training_epochs=600, pretrain_mini_batch=False, batch_size=100, augment=False,
+             drop_out=False, pretrain_dropout=False, dropout_rate=0.7):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
     if augment:
         train_X, train_y, train_observed, at_risk_X, test_X, test_y, test_observed = load_augment_data()
@@ -96,6 +96,8 @@ def test_SdA(finetune_lr=0.0001, pretrain=True, pretraining_epochs=50, n_layers=
         print >> sys.stderr, ('The pretraining code for file ' +
                               os.path.split(__file__)[1] +
                               ' ran for %.2fm' % ((end_time - start_time) / 60.))
+        if drop_out:
+            sda.reset_weight_by_rate(drop_out)
     # end-snippet-4
     ########################
     # FINETUNING THE MODEL #

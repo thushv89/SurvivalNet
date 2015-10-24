@@ -254,3 +254,7 @@ class SdA(object):
         for i in xrange(self.n_layers):
             self.sigmoid_layers[i].reset_weight((params[2*i], params[2*i+1]))
         self.logLayer.reset_weight(params[-1])
+
+    def reset_weight_by_rate(self, rate):
+        for i in xrange(self.n_layers):
+            self.sigmoid_layers[i].reset_weight_by_rate(rate)
