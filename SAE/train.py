@@ -11,12 +11,17 @@ from lifelines.utils import _naive_concordance_index
 import matplotlib.pyplot as plt
 import matlab.engine
 import theano
-
+import cPickle
 
 def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3, n_hidden=120, coxphfit=True,
              pretrain_lr=0.5, training_epochs=600, pretrain_mini_batch=False, batch_size=100, augment=False,
-             drop_out=True, pretrain_dropout=False, dropout_rate=0.5, grad_check=False, plot=False):
+             drop_out=True, pretrain_dropout=False, dropout_rate=0.5, grad_check=False, plot=False, resultPath = ''):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
+    expID = 'ftlr' + str(finetune_lr) + '-' + 'pt' + str(pretraining_epochs) + '-' + 'nl' + str(n_layers) + '-' + 'hs' + str(n_hidden) + '-' + \
+    'ptlr' + str(pretrain_lr) + '-' + 'ft' + str(training_epochs) + '-' + 'bs' + str(batch_size) + '-' +  'au' + str(augment) + '-' + \
+    'dor'+ str(dropout_rate) + '-' + 'do'+ str(drop_out) + str(pretrain_dropout)           
+    finetune_lr = theano.shared(numpy.asarray(finetune_lr, dtype=theano.config.floatX))
+    learning_rate_decay = .9;
     if augment:
         train_X, train_y, train_observed, at_risk_X, test_X, test_y, test_observed = load_augment_data()
     else:
@@ -136,6 +141,8 @@ def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3,
         b = numpy.asarray([[w[0] for w in b]]).T
         sda.logLayer.reset_weight(b)
         # print numpy.dot(last_out, b)
+    decay_learning_rate = theano.function(inputs=[], outputs=finetune_lr, \
+    updates={finetune_lr: finetune_lr * learning_rate_decay})    
 
     print '... finetunning the model'
     # early-stopping parameters
@@ -154,6 +161,8 @@ def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3,
         c.append(c_index)
         cost_list.append(avg_cost)
         print 'at epoch %d, cost is %f, test c_index is %f' % (epoch, avg_cost, c_index)
+        new_finetune_lr = decay_learning_rate()
+        print 'new lr = %d' % (finetune_lr)
     # plt.ylim(0.2, 0.8)
     print 'best score is: %f' % max(c)
     if plot:
@@ -161,6 +170,16 @@ def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3,
         plt.show()
         plt.plot(range(len(cost_list)), cost_list, c='r', marker='o', lw=5, ms=10, mfc='c')
         plt.show()
+        
+    outputFileName = resultPath + expID  + 'ci'
+    f = file(outputFileName, 'wb')
+    cPickle.dump(c, f, protocol=cPickle.HIGHEST_PROTOCOL)
+    f.close()
+    
+    outputFileName = resultPath + expID  + 'lpl'
+    f = file(outputFileName, 'wb')
+    cPickle.dump(cost_list, f, protocol=cPickle.HIGHEST_PROTOCOL)
+    f.close()
     return cost_list, c
 
 
