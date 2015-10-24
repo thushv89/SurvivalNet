@@ -118,86 +118,43 @@ class DropoutHiddenLayer(HiddenLayer):
                 rng=rng, input=input, n_in=n_in, n_out=n_out, W=W, b=b,
                 activation=activation)
         train_output = _dropout_from_layer(rng, self.output, p=dropout_rate)
-        test_output = self.output * (1 - dropout_rate)
+        test_output = self.output * (1.0 - dropout_rate)
         self.output = T.switch(T.eq(pretrain_dropout, 0), self.output,  # if not pretrain
                                T.switch(T.eq(is_train, 1), train_output, test_output))   # if train
 
 
-# start-snippet-2
-# class MLP(object):
-#     """Multi-Layer Perceptron Class
-#     A multilayer perceptron is a feedforward artificial neural network model
-#     that has one layer or more of hidden units and nonlinear activations.
-#     Intermediate layers usually have as activation function tanh or the
-#     sigmoid function (defined here by a ``HiddenLayer`` class)  while the
-#     top layer is a softmax layer (defined here by a ``LogisticRegression``
-#     class).
-#     """
-#
-#     def __init__(self, rng, input, n_in, n_hidden, n_out):
-#         """Initialize the parameters for the multilayer perceptron
-#         :type rng: numpy.random.RandomState
-#         :param rng: a random number generator used to initialize weights
-#         :type input: theano.tensor.TensorType
-#         :param input: symbolic variable that describes the input of the
-#         architecture (one minibatch)
-#         :type n_in: int
-#         :param n_in: number of input units, the dimension of the space in
-#         which the datapoints lie
-#         :type n_hidden: int
-#         :param n_hidden: number of hidden units
-#         :type n_out: int
-#         :param n_out: number of output units, the dimension of the space in
-#         which the labels lie
-#         """
-#
-#         # Since we are dealing with a one hidden layer MLP, this will translate
-#         # into a HiddenLayer with a tanh activation function connected to the
-#         # LogisticRegression layer; the activation function can be replaced by
-#         # sigmoid or any other nonlinear function
-#         self.hiddenLayer = HiddenLayer(
-#             rng=rng,
-#             input=input,
-#             n_in=n_in,
-#             n_out=n_hidden,
-#             activation=T.tanh
-#         )
-#
-#         # The logistic regression layer gets as input the hidden units
-#         # of the hidden layer
-#         self.logRegressionLayer = LogisticRegression(
-#             input=self.hiddenLayer.output,
-#             n_in=n_hidden,
-#             n_out=n_out
-#         )
-#         # end-snippet-2 start-snippet-3
-#         # L1 norm ; one regularization option is to enforce L1 norm to
-#         # be small
-#         self.L1 = (
-#             abs(self.hiddenLayer.W).sum()
-#             + abs(self.logRegressionLayer.W).sum()
-#         )
-#
-#         # square of L2 norm ; one regularization option is to enforce
-#         # square of L2 norm to be small
-#         self.L2_sqr = (
-#             (self.hiddenLayer.W ** 2).sum()
-#             + (self.logRegressionLayer.W ** 2).sum()
-#         )
-#
-#         # negative log likelihood of the MLP is given by the negative
-#         # log likelihood of the output of the model, computed in the
-#         # logistic regression layer
-#         self.negative_log_likelihood = (
-#             self.logRegressionLayer.negative_log_likelihood
-#         )
-#         # same holds for the function computing the number of errors
-#         self.errors = self.logRegressionLayer.errors
-#
-#         # the parameters of the model are the parameters of the two layer it is
-#         # made out of
-#         self.params = self.hiddenLayer.params + self.logRegressionLayer.params
-#         # end-snippet-3
-#
-#         # keep track of model input
-#         self.input = input
+def test(numpy_rng):
+    print numpy_rng.uniform(
+                    low=-numpy.sqrt(6. / (n_in + n_out)),
+                    high=numpy.sqrt(6. / (n_in + n_out)),
+                    size=(n_in, n_out)
+                )
+
+
+if __name__ == '__main__':
+    numpy_rng = numpy.random.RandomState(89677)
+    is_train = T.iscalar('is_train')
+    is_pretrain_dropout = T.iscalar('is_pretrain_dropout')
+    layer_input = T.matrix('x')
+    layer1 = DropoutHiddenLayer(rng=numpy_rng,
+                            input=layer_input,
+                            n_in=140,
+                            n_out=140,
+                            activation=T.nnet.sigmoid,
+                            dropout_rate=0.5,
+                            is_train=is_train,
+                            pretrain_dropout=is_pretrain_dropout)
+
+    layer2 = HiddenLayer(rng=numpy_rng,
+                            input=layer_input,
+                            n_in=140,
+                            n_out=140,
+                            activation=T.nnet.sigmoid)
+
+    # print layer1.W.get_value()
+    #
+    # print layer2.W.get_value()
+    n_in = 140
+    n_out = n_in
+    test(numpy_rng)
+    test(numpy_rng)

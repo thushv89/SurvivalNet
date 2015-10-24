@@ -13,8 +13,8 @@ import matlab.engine
 import theano
 
 
-def test_SdA(finetune_lr=0.01, pretrain=True, pretraining_epochs=50, n_layers=3, n_hidden=120, coxphfit=True,
-             pretrain_lr=0.5, training_epochs=600, pretrain_mini_batch=False, batch_size=100, augment=False,
+def test_SdA(finetune_lr=0.0001, pretrain=True, pretraining_epochs=50, n_layers=10, n_hidden=140, coxphfit=True,
+             pretrain_lr=0.5, training_epochs=300, pretrain_mini_batch=True, batch_size=100, augment=False,
              drop_out=True, pretrain_dropout=False, dropout_rate=0.5, grad_check=False, plot=False):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
     if augment:
@@ -212,13 +212,18 @@ def gradient_check(grad, parameter, sda_plus, sda_minus, train_fn_plus, train_fn
                     print diff / grad[l][i][j] * 100
 
 if __name__ == '__main__':
+    pretrain = False
     markers = ['o', '*', '^', '.', 'v']
     colors = ['r', 'b', 'g', 'm', 'c']
-    labels = ['.7', '.5', '.3', '.1', '0.0']
+    labels = ['.7', '.5', '.3', '.1', '.0', 'No']
     do_rates = [.7, .5, .3, .1, 0]
+    # do_rates = [0.0]
     for i in xrange(len(do_rates)):
-        cost_list, c = test_SdA(dropout_rate=do_rates[i], coxphfit=False)
+        cost_list, c = test_SdA(dropout_rate=do_rates[i], pretrain=pretrain, coxphfit=False)
         plt.plot(range(len(cost_list)), cost_list, c=colors[i], marker=markers[i], lw=5, ms=10, mfc=colors[i],
                  label=labels[i])
-    plt.legend(labels, loc=4, fontsize='x-large')
+    cost_list, c = test_SdA(drop_out=False, pretrain=pretrain, coxphfit=False)
+    plt.plot(range(len(cost_list)), cost_list, c='k', marker='s', lw=5, ms=10, mfc='k', label='No')
+    plt.legend(loc=4, fontsize='x-large')
     plt.show()
+
