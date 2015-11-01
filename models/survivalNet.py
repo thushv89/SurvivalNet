@@ -7,47 +7,48 @@ from layers.coxLossLayer import CoxLossLayer
 import numpy as np
 import theano.tensor as T
 from lifelines.utils import _naive_concordance_index
+import matplotlib as plt
 
 class SurvivalNet(Net):
 
-    net = None
-    args = None
-
-    def __init__(self, args):
-
-        self.args = args
-
-        # Create Net
-        self.net = Net(args)
+    def __init__(self, solverArgs):
+        Net.__init__(self, solverArgs)
 
         # Add DataLayer
         dataArgs = {
-            'input': args['train_x'],
-            'batch_size': args['batch_size']
+            'input_data': self.x,
+            'input_shape': self.solverArgs['input_shape']
         }
-        self.net.push_layer(DataLayer(dataArgs))
+        self.push_layer(DataLayer(dataArgs))
 
         # Add N InnerProductLayers
-        for _ in range(args['n_hidden_layers']):
-            innerProductArgs = {
-                'rng': np.random.RandomState(1234),
-                'n_out': 200,
-                'W': args['W'],
-                'b': args['b'],
-                'activation': T.tanh
-            }
-            self.net.push_layer(InnerProductLayer(innerProductArgs))
+        #for _ in range(solverArgs['n_hidden_layers']):
+        #    innerProductArgs = {
+        #        'rng': np.random.RandomState(1234),
+        #        'n_out': 1,
+        #        'W': solverArgs['W'],
+        #        'b': solverArgs['b'],
+        #        'activation': T.tanh
+        #    }
+        #    self.push_layer(InnerProductLayer(innerProductArgs))
 
 
         # Set loss funtion CoxLossLayer
         coxArgs = {
-            'at_risk': args['at_risk_x'],
+            'train_x': self.solverArgs['train_x'],
+            'train_y': self.solverArgs['train_y'],
+            'train_observed': self.solverArgs['train_observed'],
+            'at_risk': solverArgs['at_risk_x'],
             'n_out': 1
         }
-        self.net.push_layer(CoxLossLayer(coxArgs))
+        coxLayer = CoxLossLayer(coxArgs)
+        self.push_layer(coxLayer)
 
         # Compile network
-        self.net.compile()
+        self.compile()
+
+        # Initialize Cox
+        #coxLayer.coxInit(self.solverArgs['input'])
         return
 
     def evaluate(self, test_y, out, test_x):
@@ -57,13 +58,18 @@ class SurvivalNet(Net):
 
         c = []
         cost_list = []
-        for epoch in range(self.args['iters']):
+        res = []
+        for epoch in range(self.solverArgs['iters']):
 
-            avg_cost = self.net.train_function(epoch)
-            test_harzard = self.net.output_function(epoch)
+            avg_cost = self.foward_backward_function(epoch)
+            test_harzard = self.prediction_function(epoch)
+            res.append(test_harzard)
+
+            # Check gradients numerically
+            self.checkGradients(epoch)
 
             # Evaluate model
-            c_index = self.evaluate(self.args['test_y'], test_harzard, self.args['test_observed'])
+            c_index = self.evaluate(self.solverArgs['test_y'], test_harzard, self.solverArgs['test_observed'])
 
             # Store avg_cost and c_index
             cost_list.append(avg_cost)
@@ -71,8 +77,12 @@ class SurvivalNet(Net):
 
             # Print state
             print 'at epoch %d, cost is %f, test c_index is %f' % (epoch, avg_cost, c_index)
+
+        print res[-1]
+        print self.solverArgs['train_y']
+
+        #plt.plot(range(len(c)), c, c='r', marker='o', lw=5, ms=10, mfc='c')
+        #plt.show()
+        #plt.plot(range(len(cost_list)), cost_list, c='r', marker='o', lw=5, ms=10, mfc='c')
+        #plt.show()
         return
-
-
-
-
