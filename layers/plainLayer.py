@@ -10,6 +10,7 @@ class PlainLayer():
         self.output_data = None
         self.input_shape = None
         self.output_shape = None
-        self.params = None
-        self.gparams = None # Not being used
+        self.params = []
+        self.gparams = []       # Not being used
+        self.opt = True         # Needs optimization
         return

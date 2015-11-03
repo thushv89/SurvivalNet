@@ -52,19 +52,19 @@ def main():
     # Define parameters
     solverArgs = {
         'iters': 100,
-        'lr_rate': 0.0001,
+        'lr_rate': 0.001,
         'momentum': 0.9,
         'W': None,
         'b': None,
         'train_x': train_x,
         'train_y': train_y,
-        'test_x': train_x,
-        'test_y': train_y,
+        'test_x': test_x,
+        'test_y': test_y,
         'at_risk_x': at_risk_x,
         'batch_size': batch_size,
         'train_observed': train_observed,
         'n_hidden_layers': 1,
-        'test_observed': train_observed,
+        'test_observed': test_observed,
         'input_shape': [243, 200]
         #'input_data': preNet.layers[-1].input_data
     }

@@ -54,7 +54,7 @@ class CoxLossLayer(PlainLayer):
         at_risk = self.args['at_risk']
         prediction = self.output_data
         exp = T.exp(prediction)[::-1]
-        partial_sum = Te.cumsum(exp)[::-1]   # get the reversed partial cumulative sum
+        partial_sum = Te.cumsum(exp)[::-1] + 1# get the reversed partial cumulative sum
         log_at_risk = T.log(partial_sum[at_risk])
         diff = prediction - log_at_risk
         cost = T.sum(T.dot(observed, diff))
@@ -88,6 +88,7 @@ class CoxLossLayer(PlainLayer):
         self.W.set_value(W_new)
 
     def set_params(self, params):
+        self.reset_weight(params[0])
         self.params = params
 
 if __name__ == '__main__':

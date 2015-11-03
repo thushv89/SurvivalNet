@@ -3,6 +3,7 @@ __author__ = 'nelson'
 import theano
 import theano.tensor as T
 import numpy as np
+import copy
 
 class Net():
 
@@ -11,7 +12,9 @@ class Net():
         self.x = T.matrix('x')  # the data is presented as rasterized images
         self.o = T.ivector('o')  # observed death or not, 1 is death, 0 is right censored
         self.index = T.lscalar('index') # batch index
+        self.a = T.scalar('a', dtype=theano.config.floatX) # Alpha parameter
         self.layers = []
+        self.alpha = 5.5
         return
 
     # Stack layers
@@ -35,8 +38,9 @@ class Net():
     @property
     def params(self):
         params = []
-        for l in self.layers[1:]:
-            params.extend(l.params)
+        for l in self.layers:
+            if l.opt == True:
+                params.extend(l.params)
         return params
 
     # Return all gparams from the net
@@ -60,9 +64,6 @@ class Net():
     def cost(self):
         return self.layers[-1].cost(self.o)
 
-    def cost_eval(self, observed_input, x_input):
-        return self.layers[-1].cost_eval(self.o, self.x, observed_input, x_input)
-
     # Return pretraining function
     @property
     def pretraining_functions(self):
@@ -75,7 +76,6 @@ class Net():
                 cost, updates = l.get_cost_updates(self.solverArgs['corruption_level'], self.solverArgs['lr_rate'])
 
                 # compile the theano function
-
                 fn = theano.function(
                     on_unused_input='ignore',
                     inputs=[
@@ -87,6 +87,7 @@ class Net():
                     updates=updates,
                     givens={
                         self.x: self.solverArgs['train_x']
+                        #self.a: self.alpha
                     }
                 )
                 # append `fn` to the list of functions
@@ -95,7 +96,7 @@ class Net():
 
     # Return training function
     @property
-    def foward_backward_function(self):
+    def foward_backward_update_function(self):
 
         func = theano.function(
             on_unused_input='ignore',
@@ -105,10 +106,26 @@ class Net():
             givens={
                 self.x: self.solverArgs['train_x'],
                 self.o: self.solverArgs['train_observed']
+                #self.a: self.alpha
             },
             name='train')
         return func
 
+    # Return training function
+    @property
+    def foward_backward_function(self):
+
+        func = theano.function(
+            on_unused_input='ignore',
+            inputs=[self.index],
+            outputs=self.cost,
+            givens={
+                self.x: self.solverArgs['train_x'],
+                self.o: self.solverArgs['train_observed']
+                #self.a: self.alpha
+            },
+            name='train')
+        return func
 
     # Return testing function
     @property
@@ -120,6 +137,7 @@ class Net():
             givens={
                 self.x: self.solverArgs['train_x'],
                 self.o: self.solverArgs['train_observed']
+                #self.a: self.alpha
             },
             name='prediction'
         )
@@ -132,69 +150,73 @@ class Net():
         e = 0.001**2
         aprox_grads = []
         for l in self.layers[1:]:
-            for params in l.params:
-                aprox_param = np.zeros(params.get_value().shape)
-                print params.get_value().shape
-                if len(params.get_value().shape) == 2:
-                    for i in range(params.get_value().shape[0]):
-                        for j in range(params.get_value().shape[1]):
+            if len(l.params) > 0:
+                for k, params in enumerate(l.params):
+                    aprox_param = np.zeros(params.get_value().shape)
+                    if len(params.get_value().shape) == 2:
+                        for i in range(params.get_value().shape[0]):
+                            for j in range(params.get_value().shape[1]):
+
+                                # Sum epsilon
+                                params_aux = copy.copy(params.get_value())
+                                params_plus = copy.copy(params.get_value())
+                                params_minus = copy.copy(params.get_value())
+                                l_params = [p.get_value() for p in l.params]
+
+                                # Compute cost plus
+                                params_plus[i, j] += e
+                                l_params[k] = params_plus
+                                l.set_params(l_params)
+                                self.compile()
+                                cost_plus = self.foward_backward_function(epoch)
+
+                                # Compute cost minus
+                                params_minus[i, j] -=  e
+                                l_params[k] = params_minus
+                                l.set_params(l_params)
+                                self.compile()
+                                cost_minus = self.foward_backward_function(epoch)
+
+                                # Put params back
+                                l_params[k] = params_aux
+                                l.set_params(l_params)
+                                self.compile()
+
+                                # Compute gradient numerically
+                                aprox_param[i, j] = (cost_plus - cost_minus) / (2 * e)
+
+                        aprox_grads.append(aprox_param)
+
+                    elif len(params.get_value().shape) == 1:
+                        for i in range(params.get_value().shape[0]):
 
                             # Sum epsilon
-                            params_aux = params
-                            params_plus = np.array(params.get_value())
-                            params_minus = np.array(params.get_value())
+                            params_aux = copy.copy(params.get_value())
+                            params_plus = copy.copy(params.get_value())
+                            params_minus = copy.copy(params.get_value())
+                            l_params = [p.get_value() for p in l.params]
 
                             # Compute cost plus
-                            params_plus[i, j] += e
-                            l.set_params(params_plus)
+                            params_plus[i] += e
+                            l_params[k] = params_plus
+                            l.set_params(l_params)
                             self.compile()
                             cost_plus = self.foward_backward_function(epoch)
 
                             # Compute cost minus
-                            params_minus[i, j] -=  e
-
-                            l.set_params(params_minus)
+                            params_minus[i] -=  e
+                            l_params[k] = params_minus
+                            l.set_params(l_params)
                             self.compile()
                             cost_minus = self.foward_backward_function(epoch)
 
                             # Put params back
-                            l.set_params(params_aux)
+                            l_params[k] = params_aux
+                            l.set_params(l_params)
                             self.compile()
 
                             # Compute gradient numerically
-                            grad = (cost_plus - cost_minus) / 2 * e
-                            aprox_param[i, j] = grad
-                            print grad
-                    aprox_grads.append(aprox_param)
-
-                elif len(params.get_value().shape) == 1:
-                    for i in range(params.get_value().shape[0]):
-                        # Sum epsilon
-                        params_aux = params
-                        params_plus = np.array(params.get_value())
-                        params_minus = np.array(params.get_value())
-
-                        # Compute cost plus
-                        params_plus[i] += e
-                        l.set_params(params_plus)
-                        self.compile()
-                        cost_plus = self.foward_backward_function(epoch)
-
-                        # Compute cost minus
-                        params_minus[i] -=  e
-
-                        l.set_params(params_minus)
-                        self.compile()
-                        cost_minus = self.foward_backward_function(epoch)
-
-                        # Put params back
-                        l.set_params(params_aux)
-                        self.compile()
-
-                        # Compute gradient numerically
-                        grad = (cost_plus - cost_minus) / 2 * e
-                        aprox_param[i] = grad
-                        print grad
+                            aprox_param[i] = (cost_plus - cost_minus) / (2 * e)
                         aprox_grads.append(aprox_param)
 
         # Compute difference
@@ -202,8 +224,7 @@ class Net():
         diffs2 = [grad - prevgrad for grad, prevgrad in zip(self.grad_function(epoch), prevgrads)]
 
         print "Diffs: " + str([d for d in diffs])
-        print "Diffs2: " + str([d for d in diffs2])
-
+        #print "Diffs2: " + str([d for d in diffs2])
         return
 
     @property
@@ -215,6 +236,8 @@ class Net():
             givens={
                 self.x: self.solverArgs['train_x'],
                 self.o: self.solverArgs['train_observed']
+                #self.a: self.alpha
             },
             name='grad')
         return grad_fn
+

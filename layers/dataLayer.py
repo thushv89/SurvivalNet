@@ -10,7 +10,7 @@ class DataLayer(PlainLayer):
         self.args = args
         self.input_data = self.args['input_data']
         self.input_shape = np.array(args['input_shape'])
-
+        self.opt = False
         return
 
     def compile(self, output_data, output_shape):
