@@ -1,6 +1,5 @@
 import scipy.io as sio
 from path import Path
-import matlab.engine
 import numpy as np
 
 VA = Path('data/VA.mat')
@@ -9,7 +8,12 @@ LUSC_P = Path('data/LUSC_P.mat')
 Brain_P = Path('data/Brain_P.mat')
 
 
-def discrete_time_data(old_x, observed, survival_time, start=0.1):
+def discrete_time_data(old_x, observed, survival_time, start=0.1, sort=False):
+    if sort:
+        order = np.argsort(survival_time)
+        old_x = old_x[order]
+        survival_time = survival_time[order]
+        observed = observed[order]
     x = []
     new_observed = []
     # each entry in x is a list of all time prior than x
@@ -48,20 +52,21 @@ def load_data(p=Brain_P, step=0.1):
     return train_X, train_observed, test_y, test_observed, test_X
 
 
-def load_mat_data(p):
+def load_mat_data(p, sort=True):
     mat = sio.loadmat(p)
     X = mat['X']
     C = mat['C']
     T = mat['T']
-    eng = matlab.engine.start_matlab()
-    survival_time = [t[0] for t in T]
-    mat_T = matlab.double(survival_time)
-    survival_time, order = eng.sort(mat_T, nargout=2)
-    order = np.asarray(order[0]).astype(int) - 1
-    censored = np.asarray([c[0] for c in C], dtype='int32')
-    survival_time = np.asarray(survival_time[0])
-    # print survival_time
-    return 1 - censored[order], X[order].astype(float), survival_time
+    if sort:
+        survival_time = np.asarray([t[0] for t in T])
+        order = np.argsort(survival_time)
+        censored = np.asarray([c[0] for c in C], dtype='int32')
+        # print survival_time
+        return 1 - censored[order], X[order].astype(float), survival_time[order]
+    else:
+        survival_time = np.asarray([t[0] for t in T])
+        censored = np.asarray([c[0] for c in C], dtype='int32')
+        return 1 - censored, X.astype(float), survival_time
 
 
 def save_csv(name="LUAD_P.csv", p=LUAD_P):
