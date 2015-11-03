@@ -18,7 +18,7 @@ def plotresults():
     path + 'ftlr0.001-pt200-nl6-hs60-ptlr1.0-ft200-bs100-auFalse-dor0.7-doFalseTrueci']
     markers = ['o', '*', '^', '.', 'v']   
     colors = ['r', 'b', 'g', 'm', 'c']    
-    for i in range(5):
+    for i in range(len(paths)):
         f = file(paths[i], 'rb')
         loaded_objects = []
         loaded_objects = (cPickle.load(f))
