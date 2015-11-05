@@ -28,6 +28,7 @@ class DenoisingLayer(PlainLayer):
         PlainLayer.__init__(self, 'DenoisingAutoEncoderLayer')
         self.args = args
         self.theano_rng = None
+        self.opt = False
         return
 
     def compile(self, input_data, input_shape, debbug=False):
