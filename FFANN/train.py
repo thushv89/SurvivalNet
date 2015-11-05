@@ -19,7 +19,7 @@ Brain_P = Path('data/Brain_P.mat')
 AML = 'C:/Users/Song/Research/biomed/Survival/trainingData.csv'
 
 
-def train(x_train,  o_train, t_test, o_test, x_test, plot=False,
+def train(x_train,  o_train, t_test, o_test, x_test, plot=False, print_info=True,
          learning_rate=0.0001, L1_reg=0.000, L2_reg=0.075, n_epochs=300, n_hidden=12):
 
     # compute number of minibatches for training, validation and testing
@@ -106,13 +106,11 @@ def train(x_train,  o_train, t_test, o_test, x_test, plot=False,
         hazard_rate = output_fn(epoch)
         c_index = _naive_concordance_index(t_test, hazard_rate, o_test)
         c.append(c_index)
-        print 'at epoch %d, cost is %f, test c_index is %f' % (epoch, avg_cost, c_index)
+        if print_info:
+            print 'at epoch %d, cost is %f, test c_index is %f' % (epoch, avg_cost, c_index)
     print 'best score is: %f' % max(c)
     if plot:
         plt.ylim(0.2, 0.8)
         plt.plot(range(len(c)), c, c='r', marker='o', lw=5, ms=10, mfc='c')
         plt.show()
-    return max(c)
-
-# if __name__ == '__main__':
-#     main()
+    return max(c), c[0], c[-1]

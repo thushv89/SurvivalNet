@@ -13,26 +13,22 @@ def shuffle_data(O, X, T):
     return O, X, T
 
 
-def cross_validation(O, X, T, k=10, step=7):
-    m = len(X)
-    print 'data set size = %d' % m
-    F = np.floor(m / k)
-    print 'fold size = %d' % F
+def cross_validation(O, X, T, m, F, k=10, step=7):
     cursor = -1
     fold_n = 1
-
-    # c indices
-    c_indices = []
+    # store c indices
+    best_c_indices = []
+    first_c_indices = []
+    last_c_indices = []
 
     while cursor < F * k:
-        # print cursor
-        # print F*k
         start_i = int(cursor + 1)
         if m - cursor <= k:
             break
         else:
             end_i = int(cursor + F)
-        # print 'validation set index (%d, %d)' % (start_i, end_i)
+
+        print "at cross validation index %d" % fold_n
 
         x_train = np.concatenate((X[:start_i], X[end_i + 1:]), axis=0)
         t_train = np.concatenate((T[:start_i], T[end_i + 1:]), axis=0)
@@ -43,21 +39,41 @@ def cross_validation(O, X, T, k=10, step=7):
         t_test = T[start_i:end_i + 1]
         o_test = O[start_i:end_i + 1]
 
-        c_index = train(x_train=x_train, o_train=o_train, t_test=t_test, x_test=x_test, o_test=o_test)
-        c_indices.append(c_index)
+        best, first, last = train(x_train=x_train, o_train=o_train, t_test=t_test, x_test=x_test, o_test=o_test, print_info=False)
+        best_c_indices.append(best)
+        first_c_indices.append(first)
+        last_c_indices.append(last)
+
         cursor += F
         fold_n += 1
-    return c_indices
+
+    return best_c_indices, first_c_indices, last_c_indices
 
 
-def wrapper(p, shuffle_iter=10):
+def wrapper(p, shuffle_iter=10, k=10):
     O, X, T = load_mat_data(p=p, sort=False)
-    c_indices = []
+
+    m = len(X)
+    print 'data set size = %d' % m
+    F = np.floor(m / k)
+    print 'fold size = %d \n' % F
+
+    best_c = []
+    first_c = []
+    last_c = []
     for i in xrange(shuffle_iter):
-        print 'shuffling data index at %d' % i
+        print '\nshuffling data iteration %d\n' % i
         O, X, T = shuffle_data(O, X, T)
-        c_indices += cross_validation(O=O, X=X, T=T)
-    print "mean is %f, std is %f" % (float(np.mean(c_indices)), float(np.std(c_indices)))
+        best_c_indices, first_c_indices, last_c_indices = cross_validation(O=O, X=X, T=T, m=m, F=F, k=k)
+        best_c += best_c_indices
+        first_c += first_c_indices
+        last_c += last_c_indices
+
+    print "\nFinal Info:\n"
+    print "best: mean is %f, std is %f" % (float(np.mean(best_c)), float(np.std(best_c)))
+    print "first: mean is %f, std is %f" % (float(np.mean(first_c)), float(np.std(first_c)))
+    print "last: mean is %f, std is %f" % (float(np.mean(last_c)), float(np.std(last_c)))
+
 
 if __name__ == '__main__':
-    wrapper(p=LUAD_P)
+    wrapper(p=LUSC_P)
