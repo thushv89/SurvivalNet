@@ -33,7 +33,8 @@ class SurvivalNet(Net):
                 'b': solverArgs['b'],
 
             }
-            self.push_layer(InnerProductLayer(innerProductArgs))
+            inLayer = InnerProductLayer(innerProductArgs)
+            self.push_layer(inLayer)
 
             # Add non-linear function
             nonLinearArgs = {
@@ -46,8 +47,8 @@ class SurvivalNet(Net):
             daArgs = {
                 'numpy_rng':np.random.RandomState(89677),
                 'n_hidden' : 200,
-                'W' : None,
-                'bhid' : None,
+                'W' : inLayer.W,
+                'bhid' : inLayer.b,
                 'bvis' : None,
                 'n_out' : 200
             }

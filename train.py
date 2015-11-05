@@ -33,8 +33,6 @@ def main():
         'iters': 100,
         'lr_rate': 0.001,
         'momentum': 0.9,
-        'W': None,
-        'b': None,
         'train_x': train_x,
         'train_y': train_y,
         'test_x': test_x,
@@ -49,7 +47,6 @@ def main():
         'n_train_batches': n_train_batches,
         'x': simb_x,
         'o': simb_o,
-        'index': index
     }
 
     # Initialize model
