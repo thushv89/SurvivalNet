@@ -7,7 +7,7 @@ import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
 from layers.plainLayer import PlainLayer
 
-class DenoisingAutoEncoderLayer(PlainLayer):
+class DenoisingLayer(PlainLayer):
     """Denoising Auto-Encoder class (dA)
     A denoising autoencoders tries to reconstruct the input from a corrupted
     version of it by projecting it first in a latent space and reprojecting
@@ -135,7 +135,6 @@ class DenoisingAutoEncoderLayer(PlainLayer):
         step of the dA """
 
         tilde_x = self.get_corrupted_input(corruption_level)
-        print tilde_x
 
         y = self.get_hidden_values(tilde_x)
         z = self.get_reconstructed_input(y)

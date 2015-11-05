@@ -3,12 +3,13 @@ __author__ = 'nelson'
 from engine.net import Net
 from layers.dataLayer import DataLayer
 from layers.innerProductLayer import InnerProductLayer
-from layers.denoisingAutoEncoderLayer import DenoisingAutoEncoderLayer
+from layers.denoisingLayer import DenoisingAutoEncoderLayer
 from layers.coxLossLayer import CoxLossLayer
 import numpy as np
 import theano.tensor as T
 from lifelines.utils import _naive_concordance_index
 import timeit
+from layers.nonLinearLayer import NonLinearLayer
 
 class StackedAutoEncoders(Net):
 
@@ -28,10 +29,16 @@ class StackedAutoEncoders(Net):
                 'rng': np.random.RandomState(1234),
                 'n_out': solverArgs['n_out'],
                 'W': solverArgs['W'],
-                'b': solverArgs['b'],
-                'activation': T.nnet.sigmoid
+                'b': solverArgs['b']
             }
             self.push_layer(InnerProductLayer(innerProductArgs))
+
+            # Add non-linear function
+            nonLinearArgs = {
+                'activation': T.nnet.sigmoid,
+                'alpha': None
+            }
+            self.push_layer(NonLinearLayer(nonLinearArgs))
 
             daArgs = {
                 'numpy_rng': solverArgs['numpy_rng'],
@@ -42,13 +49,6 @@ class StackedAutoEncoders(Net):
                 'n_out' : solverArgs['n_out']
             }
             self.push_layer(DenoisingAutoEncoderLayer(daArgs))
-
-        # Set loss funtion CoxLossLayer
-        coxArgs = {
-            'at_risk': solverArgs['at_risk_x'],
-            'n_out': 1
-        }
-        self.push_layer(CoxLossLayer(coxArgs))
 
         # Compile network
         self.compile()

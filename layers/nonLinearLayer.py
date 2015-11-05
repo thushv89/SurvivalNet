@@ -24,7 +24,7 @@ class NonLinearLayer(PlainLayer):
 
         # Compute output
         self.act = self.args['activation']
-        if self.act == T.tanh:
+        if self.act == T.tanh or self.act == T.nnet.sigmoid:
             self.output_data = self.act(self.input_data)
         else:
             self.output_data = self.act(self.input_data, self.a)

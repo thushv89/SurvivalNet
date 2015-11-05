@@ -9,9 +9,9 @@ class Net():
 
     def __init__(self, solverArgs):
         self.solverArgs = solverArgs
-        self.x = T.matrix('x')  # the data is presented as rasterized images
-        self.o = T.ivector('o')  # observed death or not, 1 is death, 0 is right censored
-        self.index = T.lscalar('index') # batch index
+        self.x = solverArgs['x']
+        self.o = solverArgs['o']
+        self.index = solverArgs['index']
         self.a = T.scalar('a', dtype=theano.config.floatX) # Alpha parameter
         self.layers = []
         self.alpha = 5.5

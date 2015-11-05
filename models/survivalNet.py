@@ -10,6 +10,7 @@ from lifelines.utils import _naive_concordance_index
 from layers.nonLinearLayer import NonLinearLayer
 import matplotlib as plt
 from utils.nonLinearities import ReLU, leakyReLU
+from layers.denoisingLayer import DenoisingLayer
 
 class SurvivalNet(Net):
 
@@ -27,7 +28,7 @@ class SurvivalNet(Net):
         for _ in range(solverArgs['n_hidden_layers']):
             innerProductArgs = {
                 'rng': np.random.RandomState(1234),
-                'n_out': 2,
+                'n_out': 200,
                 'W': solverArgs['W'],
                 'b': solverArgs['b'],
 
@@ -41,6 +42,17 @@ class SurvivalNet(Net):
             }
             self.push_layer(NonLinearLayer(nonLinearArgs))
 
+            # Set reconstruction layer
+            daArgs = {
+                'numpy_rng':np.random.RandomState(89677),
+                'n_hidden' : 200,
+                'W' : None,
+                'bhid' : None,
+                'bvis' : None,
+                'n_out' : 200
+            }
+            self.push_layer(DenoisingLayer(daArgs))
+
 
         # Set loss funtion CoxLossLayer
         coxArgs = {
@@ -48,6 +60,9 @@ class SurvivalNet(Net):
             'train_y': self.solverArgs['train_y'],
             'train_observed': self.solverArgs['train_observed'],
             'at_risk': solverArgs['at_risk_x'],
+            'index': self.index,
+            'x': self.x,
+            'o': self.o,
             'n_out': 1
         }
         coxLayer = CoxLossLayer(coxArgs)
@@ -56,12 +71,32 @@ class SurvivalNet(Net):
         # Compile network
         self.compile()
 
-        # Initialize Cox
-        #coxLayer.coxInit(self.solverArgs['input'])
         return
 
     def evaluate(self, test_y, out, test_x):
         return _naive_concordance_index(test_y, out, test_x)
+
+    def pretrain(self):
+        print '... pre-training the model'
+
+        # Pre-train layer-wise
+        # de-noising level, set to zero for now
+        corruption_levels = [.0] * self.solverArgs['n_hidden_layers']
+        pretraining_functions = self.pretraining_functions
+        for i in xrange(self.solverArgs['n_hidden_layers']):
+            # go through pretraining epochs
+            for epoch in xrange(self.solverArgs['iters']):
+                # go through the training set
+                c = []
+                for batch_index in range(self.solverArgs['n_train_batches']):
+                    c.append(pretraining_functions[i](index=batch_index,
+                             corruption=corruption_levels[i],
+                             lr=self.solverArgs['lr_rate']))
+
+                print 'Pre-training layer %i, epoch %d, cost ' % (i, epoch),
+                print np.mean(c)
+
+        return
 
     def train(self):
 

@@ -1,13 +1,18 @@
 __author__ = 'nelson'
 
 from models.survivalNet import SurvivalNet
-from models.stackedAutoEncoders import StackedAutoEncoders
 from utils.loadMatData import read_pickle
 import theano
+import theano.tensor as T
 import numpy as np
 
-#theano.config.exception_verbosity='high'
+theano.config.exception_verbosity='high'
 def main():
+
+    # Declare simbolic variables
+    simb_x = T.matrix('x')  # the data is presented as rasterized images
+    simb_o = T.ivector('o')  # observed death or not, 1 is death, 0 is right censored
+    index = T.lscalar('index') # batch index
 
     # Read data
     observed, x, survival_time, at_risk_x = read_pickle()
@@ -23,32 +28,6 @@ def main():
     batch_size = len(train_x)
     n_train_batches = len(train_x)/batch_size
 
-    #########################
-    # PRETRAINING THE MODEL #
-    #########################
-    # Define parameters
-    #preSolverArgs = {
-    #    'iters': 40,
-    #    'lr_rate': 1.0,
-    #    'W': None,
-    #    'b': None,
-    #    'train_x': train_x,
-    #    'at_risk_x': at_risk_x,
-    #    'batch_size': batch_size,
-    #    'n_out': 200,
-    #    'n_layers': 8,
-    #    'n_train_batches': n_train_batches,
-    #    'corruption_level': 0.1,
-    #    'numpy_rng': np.random.RandomState(89677),
-    #    'input_shape': [243, 200]
-    #}
-    #preNet = StackedAutoEncoders(preSolverArgs)
-    #preNet.train()
-
-    ########################
-    # FINETUNING THE MODEL #
-    ########################
-    #print "Finetuning Model"
     # Define parameters
     solverArgs = {
         'iters': 100,
@@ -63,16 +42,21 @@ def main():
         'at_risk_x': at_risk_x,
         'batch_size': batch_size,
         'train_observed': train_observed,
-        'n_hidden_layers': 1,
+        'n_hidden_layers': 8,
         'test_observed': test_observed,
-        'input_shape': [243, 200]
-        #'input_data': preNet.layers[-1].input_data
+        'input_shape': [243, 200],
+        'corruption_level': 0.1,
+        'n_train_batches': n_train_batches,
+        'x': simb_x,
+        'o': simb_o,
+        'index': index
     }
 
     # Initialize model
     net = SurvivalNet(solverArgs)
 
     # Run training
+    net.pretrain()
     net.train()
     return
 

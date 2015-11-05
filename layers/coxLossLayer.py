@@ -60,29 +60,40 @@ class CoxLossLayer(PlainLayer):
         cost = T.sum(T.dot(observed, diff))
         return cost
 
+    def gradient(self, observed, at_risk):
+        prediction = self.output_data
+        risk = T.exp(prediction)
+        product = self.input_data * (risk * T.ones((1, self.input_shape[0])))
+        numerator = Te.cumsum(product[::-1])[::-1][at_risk]
+        denominator = Te.cumsum(risk[::-1])[::-1][at_risk] * T.ones((1, self.input_shape[0]))
+        numerator = numerator.flatten()
+        denominator = denominator.flatten()
+        gradient = T.dot(observed, self.input_data - (numerator / denominator))
+        return gradient
+
     def coxInit(self, prev_input):
 
         # Cox initialization
-        last_out_fn = theano.function(
-            on_unused_input='ignore',
-            inputs=[self.index],
-            outputs=prev_input,
-            givens={
-                self.x: self.args['train_x'],
-                self.o: self.args['train_observed']
-            },
-            name='last_output'
-        )
+        #last_out_fn = theano.function(
+        #    on_unused_input='ignore',
+        #    inputs=[self.args['index']],
+        #    outputs=prev_input,
+        #    givens={
+        #        self.args['x']: self.args['train_x'],
+        #        self.args['o']: self.args['train_observed']
+        #    },
+        #    name='last_output'
+        #)
 
-        last_out = last_out_fn(0)
-        eng = matlab.engine.start_matlab()
-        cox_x = matlab.double(last_out.tolist())
-        cox_y = matlab.double(self.args['train_y'].tolist())
-        cox_c = matlab.double((1 - self.args['train_observed']).tolist())
-        b = eng.coxphfit(cox_x, cox_y, 'censoring', cox_c)
-        b = np.asarray([[w[0] for w in b]]).T
-        self.reset_weight(b)
-        print np.dot(last_out, b)
+        #last_out = last_out_fn(0)
+        #eng = matlab.engine.start_matlab()
+        #cox_x = matlab.double(last_out.tolist())
+        #cox_y = matlab.double(self.args['train_y'].tolist())
+        #cox_c = matlab.double((1 - self.args['train_observed']).tolist())
+        #b = eng.coxphfit(cox_x, cox_y, 'censoring', cox_c)
+        #b = np.asarray([[w[0] for w in b]]).T
+        self.reset_weight(self.args['prev_weights'])
+        return
 
     def reset_weight(self, W_new):
         self.W.set_value(W_new)
