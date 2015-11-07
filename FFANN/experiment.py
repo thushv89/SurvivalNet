@@ -54,22 +54,22 @@ def wrapper(p, shuffle_iter=10, k=10):
     O, X, T = load_mat_data(p=p, sort=False)
 
     m = len(X)
-    print 'data set size = %d' % m
     F = np.floor(m / k)
-    print 'fold size = %d \n' % F
+    print '*** data set size = %d, fold size = %d ***' % (m, F)
+    print '*** fold size = %d *** \n' % F
 
     best_c = []
     first_c = []
     last_c = []
     for i in xrange(shuffle_iter):
-        print '\nshuffling data iteration %d\n' % i
+        print '\n*** shuffling data iteration %d ***\n' % i
         O, X, T = shuffle_data(O, X, T)
         best_c_indices, first_c_indices, last_c_indices = cross_validation(O=O, X=X, T=T, m=m, F=F, k=k)
         best_c += best_c_indices
         first_c += first_c_indices
         last_c += last_c_indices
 
-    print "\nFinal Info:\n"
+    print "\n*** Final Info ***\n"
     print "best: mean is %f, std is %f" % (float(np.mean(best_c)), float(np.std(best_c)))
     print "first: mean is %f, std is %f" % (float(np.mean(first_c)), float(np.std(first_c)))
     print "last: mean is %f, std is %f" % (float(np.mean(last_c)), float(np.std(last_c)))
