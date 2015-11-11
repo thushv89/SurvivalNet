@@ -6,6 +6,8 @@ VA = Path('data/VA.mat')
 LUAD_P = Path('data/LUAD_P.mat')
 LUSC_P = Path('data/LUSC_P.mat')
 Brain_P = Path('data/Brain_P.mat')
+LUAD_G = Path('data/LUAD_G.mat')
+LUSC_G = Path('data/LUSC_G.mat')
 
 
 def discrete_time_data(old_x, observed, survival_time, start=0.1, sort=False):

@@ -42,7 +42,7 @@ def augment_data(train_X, train_T, train_C):
     return Xa, train_T * 2, train_C * 2
 
 
-def load_augment_data(p=LUAD_P):
+def load_augment_data(p=VA):
     mat = sio.loadmat(p)
     eng = matlab.engine.start_matlab()
     X = mat['X']
@@ -67,7 +67,7 @@ def load_augment_data(p=LUAD_P):
     return train_X[order], train_T, train_O, at_risk_X, test_X, test_T, 1 - test_C
 
 
-def load_data(p=LUAD_P):
+def load_data(p=VA):
     mat = sio.loadmat(p)
     X = mat['X']
     C = mat['C']
@@ -82,8 +82,7 @@ def load_data(p=LUAD_P):
     at_risk = np.asarray(eng.ismember(temp, temp, nargout=2)[1][0]).astype(int)
     censored = np.asarray([c[0] for c in C], dtype='int32')
     survival_time = np.asarray(survival_time[0])
-    # print survival_time
-    return 1 - censored[order], X[order], survival_time, at_risk - 1
+    return 1 - censored[order], X[order].astype('float64'), survival_time, at_risk - 1
 
 if __name__ == '__main__':
     # save_pickle(name='VA.pickle', p=VA)
