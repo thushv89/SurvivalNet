@@ -57,7 +57,7 @@ def wrapper(shuffle_iter=10, k=10):
 def cross_validation(C, X, T, m, F, k):
     n_layer = 6
     hSize = 10
-    do_rate = .1
+    do_rate = .0
     pretrain = True
     # store c indices
     best_c_indices = []
@@ -96,14 +96,14 @@ def cross_validation(C, X, T, m, F, k):
         sorted_t_train = matlab.double(sorted_t_train)
         at_risk = np.asarray(eng.ismember(sorted_t_train, sorted_t_train, nargout=2)[1][0]).astype(int)
         t_train = np.asarray(sorted_t_train[0])
-        c_train = 1 - c_train[order]
+        c_train = c_train[order]
         x_train = x_train[order]
         aa = at_risk - 1
 
         best, first, last = test_SdA(train_observed=c_train, train_X=x_train, train_y=t_train, at_risk_X=aa,
-        test_observed = c_test, test_X=x_test, test_y=t_test, finetune_lr=0.01, pretrain=pretrain,
+        test_observed = c_test, test_X=x_test, test_y=t_test, finetune_lr=0.1, pretrain=pretrain,
         pretraining_epochs=400, n_layers=n_layer,n_hidden = hSize, coxphfit=False, pretrain_lr=2.0,
-        training_epochs=400, pretrain_mini_batch=True, batch_size=8, augment = False, drop_out=True,
+        training_epochs=400, pretrain_mini_batch=True, batch_size=8, augment=False, drop_out=True,
         pretrain_dropout=False, dropout_rate=do_rate, grad_check=False, plot=False)
 
         best_c_indices.append(best)
