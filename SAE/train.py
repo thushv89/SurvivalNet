@@ -13,21 +13,22 @@ import matlab.engine
 import theano
 
 
-def test_SdA(finetune_lr=0.001, pretrain=True, pretraining_epochs=50, n_layers=13, n_hidden=140, coxphfit=True,
+def test_SdA(train_X=None, train_y=None, train_observed=None, at_risk_X=None, test_observed=None, test_X=None,
+             test_y=None, finetune_lr=0.001, pretrain=True, pretraining_epochs=50, n_layers=13, n_hidden=140, coxphfit=True,
              pretrain_lr=0.5, training_epochs=600, pretrain_mini_batch=True, batch_size=100, augment=False,
              drop_out=True, pretrain_dropout=False, dropout_rate=0.5, grad_check=False, plot=False):
     # observed, X, survival_time, at_risk_X = load_data('C:/Users/Song/Research/biomed/Survival/trainingData.csv')
-    if augment:
-        train_X, train_y, train_observed, at_risk_X, test_X, test_y, test_observed = load_augment_data()
-    else:
-        observed, X, survival_time, at_risk_X = load_data()
-        test_size = len(X) / 3
-        train_X = X[test_size:]
-        train_y = survival_time[test_size:]
-        train_observed = observed[test_size:]
-        test_observed = observed[:test_size]
-        test_X = X[:test_size]
-        test_y = survival_time[:test_size]
+    # if augment:
+    #     train_X, train_y, train_observed, at_risk_X, test_X, test_y, test_observed = load_augment_data()
+    # else:
+    #     observed, X, survival_time, at_risk_X = load_data()
+    #     test_size = len(X) / 3
+    #     train_X = X[test_size:]
+    #     train_y = survival_time[test_size:]
+    #     train_observed = observed[test_size:]
+    #     test_observed = observed[:test_size]
+    #     test_X = X[:test_size]
+    #     test_y = survival_time[:test_size]
     n_ins = train_X.shape[1]
     n_train_batches = len(train_X) / batch_size if pretrain_mini_batch else 1
     # changed to theano shared variable in order to do minibatch
@@ -161,7 +162,7 @@ def test_SdA(finetune_lr=0.001, pretrain=True, pretraining_epochs=50, n_layers=1
         plt.show()
         plt.plot(range(len(cost_list)), cost_list, c='r', marker='o', lw=5, ms=10, mfc='c')
         plt.show()
-    return cost_list, c
+    return max(c), c[0], c[-1]
 
 
 def gradient_check(grad, parameter, sda_plus, sda_minus, train_fn_plus, train_fn_minus, e=0.01**2, epoch=1):

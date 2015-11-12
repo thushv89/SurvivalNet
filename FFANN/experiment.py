@@ -76,4 +76,4 @@ def wrapper(p, shuffle_iter=10, k=10):
 
 
 if __name__ == '__main__':
-    wrapper(p=LUSC_G)
+    wrapper(p=VA)

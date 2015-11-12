@@ -80,6 +80,5 @@ def save_csv(name="LUAD_P.csv", p=LUAD_P):
     np.savetxt(Path('C:/Users/Song/Research/biomed/Survival/RSF/' + name), X, delimiter=',', fmt='%10.5f')
 
 if __name__ == '__main__':
-    save_csv(name="LUSC_P.csv", p=LUSC_P)
-    save_csv(name="VA.csv", p=VA)
-    save_csv(name="Brain_P.csv", p=Brain_P)
+    save_csv(name="LUAD_G.csv", p=LUAD_G)
+    save_csv(name="LUSC_G.csv", p=LUSC_G)
