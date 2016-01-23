@@ -1,6 +1,7 @@
 import scipy.io as sio
 from path import Path
 import numpy as np
+import theano
 
 VA = Path('data/VA.mat')
 LUAD_P = Path('data/LUAD_P.mat')
@@ -26,17 +27,17 @@ def discrete_time_data(old_x, observed, survival_time, start=0.1, sort=False):
         step = start
         while step < time:
             new_row = temp[:]
-            new_row[0] = step
+            new_row = [step] + new_row
             x.append(new_row)
             new_observed.append(0.0)
             step += start
-        temp[0] = step
+        temp = [step] + temp
         x.append(temp)
         if observed[index]:
             new_observed.append(1.0)
         else:
             new_observed.append(0.0)
-    return np.asarray(x), np.asarray(new_observed)
+    return np.asarray(x, dtype=theano.config.floatX), np.asarray(new_observed, dtype=theano.config.floatX)
 
 
 def load_data(p=Brain_P, step=0.1):
@@ -64,11 +65,11 @@ def load_mat_data(p, sort=True):
         order = np.argsort(survival_time)
         censored = np.asarray([c[0] for c in C], dtype='int32')
         # print survival_time
-        return 1 - censored[order], X[order].astype(float), survival_time[order]
+        return 1 - censored[order], X[order], survival_time[order]
     else:
-        survival_time = np.asarray([t[0] for t in T])
-        censored = np.asarray([c[0] for c in C], dtype='int32')
-        return 1 - censored, X.astype(float), survival_time
+        survival_time = np.asarray(T[0])
+        censored = np.asarray(C[0], dtype='int32')
+        return 1 - censored, X, survival_time
 
 
 def save_csv(name="LUAD_P.csv", p=LUAD_P):

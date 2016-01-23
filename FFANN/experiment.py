@@ -1,6 +1,7 @@
 from loadMatData import *
 from train import train
 import numpy as np
+import theano
 
 
 def shuffle_data(O, X, T):
@@ -75,5 +76,47 @@ def wrapper(p, shuffle_iter=10, k=10):
     print "last: mean is %f, std is %f" % (float(np.mean(last_c)), float(np.std(last_c)))
 
 
+def brain_wrapper(step=7):
+    data_path = 'C:/Users/Song/Research/biomed/Survival/RSF/shuffle'
+
+    val_scores = []
+    for i in xrange(10):
+        print '\n*** shuffling data iteration %d ***\n' % i
+        p = data_path + str(i) + '.mat'
+        O, X, T = load_mat_data(p=p, sort=False)
+        X = np.asarray(X, dtype=theano.config.floatX)
+        T = np.asarray(T, dtype=theano.config.floatX)
+
+        fold_size = int(15 * len(X) / 100)
+
+        # split data
+        X_test = X[:fold_size]
+        T_test = T[:fold_size]
+        O_test = O[:fold_size]
+
+        X_val = X[fold_size:2 * fold_size]
+        T_val = T[fold_size:2 * fold_size]
+        O_val = O[fold_size:2 * fold_size]
+
+        X_train = X[fold_size * 2:]
+        T_train = T[fold_size * 2:]
+        O_train = O[fold_size * 2:]
+
+        X_train, O_train = discrete_time_data(X_train, O_train, T_train, start=step, sort=True)
+
+        X_val = np.hstack((X_val, np.asarray([T_val]).T))
+        X_test = np.hstack((X_test, np.asarray([T_test]).T))
+
+        print X_val.shape, X_test.shape
+
+        validate_c = train(x_train=X_train, o_train=O_train, t_test=T_test, x_test=X_test, o_test=O_test, t_val=T_val,
+                           o_val=O_val, x_val=X_val, testing=False, learning_rate=1e-6, n_hidden=15, L2_reg=0.075)
+        val_scores.append(validate_c)
+
+    print "\n*** Final Info ***\n"
+    print 'average validate', np.mean(val_scores)
+    print 'std validate', np.std(val_scores)
+
+
 if __name__ == '__main__':
-    wrapper(p=VA)
+    brain_wrapper()

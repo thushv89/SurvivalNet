@@ -19,8 +19,8 @@ Brain_P = Path('data/Brain_P.mat')
 AML = 'C:/Users/Song/Research/biomed/Survival/trainingData.csv'
 
 
-def train(x_train,  o_train, t_test, o_test, x_test, plot=False, print_info=True,
-         learning_rate=0.0001, L1_reg=0.000, L2_reg=0.075, n_epochs=300, n_hidden=12):
+def train(x_train,  o_train, t_val, o_val, x_val, t_test, o_test, x_test, learning_rate=0.00001, L1_reg=0.000,
+          L2_reg=0.075, n_epochs=300, n_hidden=12, testing=False):
 
     # compute number of minibatches for training, validation and testing
     input_shape = x_train.shape[1]
@@ -82,7 +82,17 @@ def train(x_train,  o_train, t_test, o_test, x_test, plot=False, print_info=True
         }
     )
 
-    output_fn = theano.function(
+    val_fn = theano.function(
+        on_unused_input='ignore',
+        inputs=[index],
+        outputs=classifier.outputLayer.hazard_ratio,
+        givens={
+            x: x_val,
+            o: o_val
+        }
+    )
+
+    test_fn = theano.function(
         on_unused_input='ignore',
         inputs=[index],
         outputs=classifier.outputLayer.hazard_ratio,
@@ -97,20 +107,23 @@ def train(x_train,  o_train, t_test, o_test, x_test, plot=False, print_info=True
     # TRAIN MODEL #
     ###############
     print '... training'
-    c = []
+    test_c_index = 0
+    best_val = 0
     epoch = 0
     while epoch < n_epochs:
         epoch += 1
         avg_cost = train_model(epoch)
         # learning_rate *= 0.95
-        hazard_rate = output_fn(epoch)
-        c_index = _naive_concordance_index(t_test, hazard_rate, o_test)
-        c.append(c_index)
-        if print_info:
-            print 'at epoch %d, cost is %f, test c_index is %f' % (epoch, avg_cost, c_index)
-    print 'best score is: %f' % max(c)
-    if plot:
-        plt.ylim(0.2, 0.8)
-        plt.plot(range(len(c)), c, c='r', marker='o', lw=5, ms=10, mfc='c')
-        plt.show()
-    return max(c), c[0], c[-1]
+        val_hazard_rate = val_fn(epoch)
+        val_c_index = _naive_concordance_index(t_val, -val_hazard_rate, o_val)
+        if val_c_index >= best_val:
+            best_val = val_c_index
+            test_hazard = test_fn(epoch)
+            test_c_index = _naive_concordance_index(t_test, -test_hazard, o_test)
+        print 'at epoch %d, cost is %f, validate c_index is %f' % (epoch, avg_cost, val_c_index)
+
+    print 'best validate score is', best_val
+    if testing:
+        print 'final test score', test_c_index
+        return best_val, test_c_index
+    return best_val
