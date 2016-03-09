@@ -55,7 +55,7 @@ find_package( Boost REQUIRED )
 if(Boost_FOUND)
    include_directories(${Boost_INCLUDE_DIRS})
 else(Boost_FOUND)
-   find_library(Boost boost PATHS /opt/local/lib)
+   find_library(Boost boost PATHS /usr/include)
    include_directories(${Boost_LIBRARY_PATH})
 endif()
 

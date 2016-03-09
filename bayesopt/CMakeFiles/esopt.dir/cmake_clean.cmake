@@ -1,4 +1,6 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
+  "doc/html"
+  "doc/latex"
   "CMakeFiles/esopt.dir/src/bayesoptcont.cpp.o"
   "CMakeFiles/esopt.dir/src/bayesoptdisc.cpp.o"
   "CMakeFiles/esopt.dir/src/bayesoptbase.cpp.o"
@@ -37,9 +39,11 @@ file(REMOVE_RECURSE
   "CMakeFiles/esopt.dir/python/bayesopt.cpp.o"
   "lib/bayesopt.pdb"
   "lib/bayesopt.so"
+  "lib/bayesopt.pdb"
+  "CMakeFiles/CMakeRelink.dir/bayesopt.so"
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/esopt.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/esopt.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)

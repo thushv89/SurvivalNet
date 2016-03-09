@@ -4,4 +4,8 @@
 /usr/local/include/bayesopt/bayesopt/bayesoptbase.hpp
 /usr/local/include/bayesopt/bayesopt/parameters.h
 /usr/local/include/bayesopt/bayesopt/parameters.hpp
-/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/bayesopt.so
+/usr/lib/python2.7/dist-packages/bayesopt.so
+/usr/local/include/nlopt.hpp
+/usr/local/include/nlopt.f
+/usr/local/include/nlopt.h
+/usr/local/lib/libnlopt.a
