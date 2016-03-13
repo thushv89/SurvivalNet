@@ -1,0 +1,41 @@
+
+
+
+~200 features, 183 to be exact (do we have examples freely available)?
+181 proteins (128 total proteins + 1 cleaved + 1 acetylated + 51 phosphorylated forms) is this the data we're dealing with?
+do we know the meaning of features?
+
+what is RPPA-based proteomic analysis? some type of analysis for caner-realated protiens - See supplementary method 2
+
+are we using exact same dataset as in "A pan-cancer proteomic perspective on The Cancer Genome Atlas" paper? it reports 3467 samples, why do we have only ~650? If we're using our own data, can use use the data form the paper to improve our model?
+
+what is pathway score?
+
+what are protien expressions and mRNA expressions? are they quantifiable?
+how are these protien heatmaps generated ? is it level of protien? is it mean
+pathway score for that cluster or tumour lineage?
+different types of analysis RRPA HER2 should we know about these?
+data coming from protien:mRNA, protien:miRNA, protein:CNV are these important?
+
+From supplementary data
+there are protein:mRNA 208 pairs 
+is the correlation analysis important to us? if so what does density represent?
+
+lung adenocarcinoma (LUAD), lung squamous cell carcinoma (LUSC) what is brain & va?
+is data available freely?
+
+clinical data 
+Age (median)
+Stage
+Adjuvant treatment - Chemo,Radio
+Smoking status
+Death events 
+Median survival 
+what's purpose of shuffle in gen_splits.py?
+
+low number of samples 650 appx
+Understand features
+definitely need feature engineering
+use bayesian optimization for hyper param tuning
+use cross validation to measure accuracy
+finetuning by - Cox partial log likelihood
