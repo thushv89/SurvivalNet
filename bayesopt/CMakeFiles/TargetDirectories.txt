@@ -1,5 +1,0 @@
-/home/thushv89/SurvivalNet/bayesopt/CMakeFiles/bayesopt.dir
-/home/thushv89/SurvivalNet/bayesopt/CMakeFiles/doc.dir
-/home/thushv89/SurvivalNet/bayesopt/CMakeFiles/doxygen.dir
-/home/thushv89/SurvivalNet/bayesopt/CMakeFiles/esopt.dir
-/home/thushv89/SurvivalNet/bayesopt/nlopt2/CMakeFiles/nlopt.dir
