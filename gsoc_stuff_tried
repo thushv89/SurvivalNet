@@ -3,3 +3,5 @@ don't understand what T is
 
 plot T against time (nothing special)
 plot T different colors for C==1 indices and C==0 indices (nothing special)
+plot T ordered by value -> has an exp curve
+plot at_risk-1 -> quite weird linear line (doesn't make much sense)

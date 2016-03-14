@@ -56,20 +56,35 @@ if __name__=='__main__':
     # plot T against time
     index = np.arange(0,b_x.shape[0],1)
     fig = plt.figure(1)
-    plt.scatter(index,b_t)
-    plt.show()
+    ax1_1 = plt.subplot(221)
+    ax1_1.scatter(index,b_t)
+    ax1_1.set_title('T against time')
+
+    # plot ordered T
+    index = np.arange(0,b_x.shape[0],1)
+    ax1_2 = plt.subplot(222)
+    ord_b_t = np.sort(b_t[:,0])
+    ax1_2.scatter(index,ord_b_t)
+    ax1_2.set_title('T ordered by value')
 
     # plot T differentiated by C
     b_t_0 = b_t[np.where(b_c==0)]
     b_t_1 = b_t[np.where(b_c==1)]
     index_0 = np.arange(0,b_t_0.size)
     index_1 = np.arange(0,b_t_1.size)
-    fig2 = plt.figure(2)
-    ax1 = fig2.add_subplot(111)
-    ax1.scatter(index_0, b_t_0, c='b')
-    ax1.scatter(index_1, b_t_1, c='r')
-    plt.show()
+    ax1_3 = plt.subplot(223)
+    ax1_3.scatter(index_0, b_t_0, c='b')
+    ax1_3.scatter(index_1, b_t_1, c='r')
+    ax1_3.set_title('T grouped by C')
 
+    sorted_T = np.sort(b_t[:,0]).tolist()
+    at_risk = np.asarray([sorted_T.index(x)+1 for x in sorted_T]).astype('int32')
+    index = np.arange(0,b_x.shape[0],1)
+    ax1_4 = plt.subplot(224)
+    ax1_4.scatter(index,np.asarray(at_risk)-1)
+    ax1_4.set_title('at risk - 1')
+
+    plt.show()
     # plot tsne transform of X
     b_x_tsne = TSNE(random_state=123123).fit_transform(b_x)
     b_x_tsne_0 = b_x_tsne[np.where(b_c==0)[0],:]
@@ -77,7 +92,7 @@ if __name__=='__main__':
     palette = ['r','b']
 
     # We create a scatter plot.
-    f = plt.figure(3)
+    f = plt.figure(4)
     ax2 = plt.subplot(111)
     ax2.scatter(b_x_tsne_0[:,0], b_x_tsne_0[:,1], lw=0, s=40, c='r')
     ax2.scatter(b_x_tsne_1[:,0], b_x_tsne_1[:,1], lw=0, s=40, c='b')
