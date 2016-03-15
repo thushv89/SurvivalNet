@@ -39,3 +39,9 @@ definitely need feature engineering
 use bayesian optimization for hyper param tuning
 use cross validation to measure accuracy
 finetuning by - Cox partial log likelihood
+
+
+
+exp = T.exp(prediction)[::-1]
+partial_sum = Te.cumsum(exp)[::-1]  + 1 # get the reversed partial cumulative sum
+shouldn't it be just one [::-1]??
