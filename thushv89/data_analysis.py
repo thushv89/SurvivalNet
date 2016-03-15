@@ -49,20 +49,20 @@ if __name__=='__main__':
 
     #load_data('../data/')
     b_x,b_c,b_t = load_data_mat('..'+os.sep+'data'+os.sep+'Brain_P.mat')
-    ld_x,ld_c,ld_t = load_data_mat('..'+os.sep+'data'+os.sep+'LUAD_P.mat')
-    lc_x, lc_c, lc_t = load_data_mat('..'+os.sep+'data'+os.sep+'LUSC_P.mat')
-    v_x,v_c,v_t = load_data_mat('..'+os.sep+'data'+os.sep+'VA.mat')
+    #ld_x,ld_c,ld_t = load_data_mat('..'+os.sep+'data'+os.sep+'LUAD_P.mat')
+    #lc_x, lc_c, lc_t = load_data_mat('..'+os.sep+'data'+os.sep+'LUSC_P.mat')
+    #v_x,v_c,v_t = load_data_mat('..'+os.sep+'data'+os.sep+'VA.mat')
 
     # plot T against time
     index = np.arange(0,b_x.shape[0],1)
     fig = plt.figure(1)
-    ax1_1 = plt.subplot(221)
+    ax1_1 = plt.subplot(231)
     ax1_1.scatter(index,b_t)
     ax1_1.set_title('T against time')
 
     # plot ordered T
     index = np.arange(0,b_x.shape[0],1)
-    ax1_2 = plt.subplot(222)
+    ax1_2 = plt.subplot(232)
     ord_b_t = np.sort(b_t[:,0])
     ax1_2.scatter(index,ord_b_t)
     ax1_2.set_title('T ordered by value')
@@ -72,7 +72,7 @@ if __name__=='__main__':
     b_t_1 = b_t[np.where(b_c==1)]
     index_0 = np.arange(0,b_t_0.size)
     index_1 = np.arange(0,b_t_1.size)
-    ax1_3 = plt.subplot(223)
+    ax1_3 = plt.subplot(233)
     ax1_3.scatter(index_0, b_t_0, c='b')
     ax1_3.scatter(index_1, b_t_1, c='r')
     ax1_3.set_title('T grouped by C')
@@ -80,9 +80,21 @@ if __name__=='__main__':
     sorted_T = np.sort(b_t[:,0]).tolist()
     at_risk = np.asarray([sorted_T.index(x)+1 for x in sorted_T]).astype('int32')
     index = np.arange(0,b_x.shape[0],1)
-    ax1_4 = plt.subplot(224)
+    ax1_4 = plt.subplot(234)
     ax1_4.scatter(index,np.asarray(at_risk)-1)
     ax1_4.set_title('at risk - 1')
+
+    args_sorted_T = np.argsort(b_t[:,0]).tolist()
+    C_sorted_by_T = b_c[args_sorted_T]
+    index = np.arange(0,b_x.shape[0],1)
+    ax1_5 = plt.subplot(235)
+    ax1_5.scatter(index,C_sorted_by_T)
+    ax1_5.set_title('C sorted by T')
+
+    index = np.arange(0,b_x.shape[0],1)
+    ax1_6 = plt.subplot(236)
+    ax1_6.scatter(index,b_c)
+    ax1_6.set_title('C against time')
 
     plt.show()
     # plot tsne transform of X
