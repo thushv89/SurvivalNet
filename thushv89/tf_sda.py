@@ -94,10 +94,20 @@ class SDA_TF(object):
         sess.run(init)
         print "Session Started ...\n"
 
-    def test_hid_output(self,sess,batch_size,inp,b_i):
-        batch_xs = inp[b_i*batch_size:(b_i+1)*batch_size]
-        out = self.da_layers[0].output(self.x_sym)
-        print(sess.run(out,feed_dict={self.x_sym:batch_xs}))
+    def hid_output(self,sess,batch_size,x,layer_idx):
+        from math import ceil
+        n_batches = int(ceil(x.shape[0]*1.0/batch_size))
+
+        hid_features = None
+        for b_i in range(n_batches):
+            batch_xs = x[b_i*batch_size:(b_i+1)*batch_size]
+            out = chained_out(self.da_layers,self.x_sym,layer_idx)
+            if hid_features is None:
+                hid_features = sess.run(out,feed_dict={self.x_sym:batch_xs})
+            else:
+                hid_features = np.append(hid_features,sess.run(out,feed_dict={self.x_sym:batch_xs}),axis=0)
+
+        return hid_features
 
 
     def build_costs(self):
@@ -119,16 +129,16 @@ class SDA_TF(object):
         # to be implemented
         finetune_cost = None
 
-        prediction = chained_out(self.layers,self.x_sym,len(self.layers)-1)
-        exp = tf.reverse(tf.exp(prediction,name='exp_prediction'),dims=[True])
-        partial_sum = tf.reverse(cumsum(exp),dims=[True])  + 1 # get the reversed partial cumulative sum
-        log_at_risk = tf.log(partial_sum[at_risk])
-        diff = prediction - log_at_risk
-        cost = tf.reduce_sum(tf.matmul(self.y_sym, diff))
+        #prediction = chained_out(self.layers,self.x_sym,len(self.layers)-1)
+        #exp = tf.reverse(tf.exp(prediction,name='exp_prediction'),dims=[True])
+        #partial_sum = tf.reverse(cumsum(exp),dims=[True])  + 1 # get the reversed partial cumulative sum
+        #log_at_risk = tf.log(partial_sum[at_risk])
+        #diff = prediction - log_at_risk
+        #cost = tf.reduce_sum(tf.matmul(self.y_sym, diff))
 
     def pretrain(self,sess,learning_rate,batch_size,iterations,x):
         from math import ceil
-        n_batches = int(ceil(x.shape[0]/batch_size))
+        n_batches = int(ceil(x.shape[0]*1.0/batch_size))
         for step in range(iterations):
             for b_i in range(n_batches):
                 for l_i,l in enumerate(self.da_layers):
@@ -163,19 +173,24 @@ def load_data_mat(filename):
     return brain_data['X'],brain_data['C'],brain_data['T']
 
 from  sklearn.preprocessing import MinMaxScaler
-
+from utils import do_tsne
 if __name__ == '__main__':
     b_x,b_c,b_t = load_data_mat('..'+os.sep+'data'+os.sep+'Brain_P.mat')
     mmscaler = MinMaxScaler()
     norm_b_x = mmscaler.fit_transform(b_x)
 
-    batch_size = 100
-    iterations = 50
+    batch_size = 10
+    iterations = 30
 
-    sda = SDA_TF(183,[250,250],1,batch_size=batch_size)
+    sda = SDA_TF(183,[50,50],1,batch_size=batch_size)
     sess = tf.Session()
     sda.start_session(sess)
     sda.build_costs()
 
     sda.pretrain(sess,0.05,batch_size,iterations,norm_b_x)
 
+    features_0 = sda.hid_output(sess,batch_size,norm_b_x,0)
+    do_tsne(features_0,b_c,1)
+
+    features_1 = sda.hid_output(sess,batch_size,norm_b_x,1)
+    do_tsne(features_1,b_c,2)
