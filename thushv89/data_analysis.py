@@ -73,9 +73,10 @@ if __name__=='__main__':
     index_0 = np.arange(0,b_t_0.size)
     index_1 = np.arange(0,b_t_1.size)
     ax1_3 = plt.subplot(233)
-    ax1_3.scatter(index_0, b_t_0, c='b')
-    ax1_3.scatter(index_1, b_t_1, c='r')
+    ax1_3.scatter(index_0, b_t_0, c='b',label='c=0')
+    ax1_3.scatter(index_1, b_t_1, c='r',label='c=1')
     ax1_3.set_title('T grouped by C')
+    plt.legend()
 
     sorted_T = np.sort(b_t[:,0]).tolist()
     at_risk = np.asarray([sorted_T.index(x)+1 for x in sorted_T]).astype('int32')
@@ -106,6 +107,7 @@ if __name__=='__main__':
     # We create a scatter plot.
     f = plt.figure(4)
     ax2 = plt.subplot(111)
-    ax2.scatter(b_x_tsne_0[:,0], b_x_tsne_0[:,1], lw=0, s=40, c='r')
-    ax2.scatter(b_x_tsne_1[:,0], b_x_tsne_1[:,1], lw=0, s=40, c='b')
+    ax2.scatter(b_x_tsne_0[:,0], b_x_tsne_0[:,1], c='b',label='c=0')
+    ax2.scatter(b_x_tsne_1[:,0], b_x_tsne_1[:,1], c='r',label='c=1')
+    plt.legend()
     plt.show()

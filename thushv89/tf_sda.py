@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+from lifelines.utils import _naive_concordance_index
 
 class Layer_TF(object):
 
@@ -134,7 +135,8 @@ class SDA_TF(object):
         prediction = chained_out(self.layers,self.x_sym,len(self.layers)-1)
         log_at_risk = tf.log(self.psum_sym,name='log_partial_sum')
         diff = prediction - log_at_risk
-        self.finetune_cost = -tf.reduce_mean(tf.matmul(tf.transpose(self.y_sym), diff))
+        #self.finetune_cost = -tf.reduce_mean(tf.matmul(tf.transpose(self.y_sym), diff))
+        self.finetune_cost = -tf.reduce_mean(self.y_sym* diff)
 
     def pretrain(self,sess,learning_rate, batch_size, iterations, x):
         from math import ceil
@@ -145,15 +147,15 @@ class SDA_TF(object):
                     layer_pretrain_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.pre_train_costs[l_i])
                     batch_xs = x[b_i*batch_size:(b_i+1)*batch_size]
                     sess.run(layer_pretrain_step, feed_dict={self.x_sym: batch_xs})
-            print('Layer-wise pre-training Iteration ',step,' finished ...')
+            print 'Layer-wise pre-training Iteration ',step,' finished ...'
 
-        print('Full pre-training starting ...')
+        print 'Full pre-training starting ...'
         for step in range(iterations):
             for b_i in range(n_batches):
                 full_pretrain_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.pre_train_full_cost)
                 batch_xs = x[b_i*batch_size:(b_i+1)*batch_size]
                 sess.run(full_pretrain_step, feed_dict={self.x_sym: batch_xs})
-            print('Full pre-traning Iteration ',str(step),': ',sess.run(self.pre_train_full_cost,feed_dict={self.x_sym: batch_xs}))
+            print 'Full pre-traning Iteration ',str(step),': ',sess.run(self.pre_train_full_cost,feed_dict={self.x_sym: batch_xs})
 
     def finetune(self,sess,learning_rate,batch_size,iterations,x,y,at_risk):
         print '\n Fine tuning... \n'
@@ -180,9 +182,24 @@ class SDA_TF(object):
                                                    self.psum_sym:batch_psum}
                          )
 
-            print('Fine-tuning Iteration ',str(step),': ',
-                  sess.run(self.finetune_cost,feed_dict={self.x_sym: batch_xs,self.y_sym:batch_ys,self.risk_sym:batch_risk,self.psum_sym:batch_psum})
-                  )
+            print 'Fine-tuning Iteration ',str(step),': ', \
+                sess.run(self.finetune_cost,feed_dict={self.x_sym: batch_xs,self.y_sym:batch_ys,self.risk_sym:batch_risk,self.psum_sym:batch_psum})
+
+    def calc_CI(self,sess, test_x,test_y):
+        print '\n Calculating Concordance Index... \n'
+        from math import ceil
+        n_batches = int(ceil(test_x.shape[0]*1.0/batch_size))
+
+        hazard = None
+        for b_i in range(n_batches):
+            batch_xs = test_x[b_i*batch_size:(b_i+1)*batch_size]
+            pred = sess.run(chained_out(self.layers,self.x_sym,len(self.layers)-1),feed_dict={self.x_sym:batch_xs})
+            if hazard is None:
+                hazard = pred
+            else:
+                hazard = np.append(hazard,pred,axis=0)
+
+        c_index = _naive_concordance_index(test_y, -hazard, test_y)
 
 def load_data_mat(filename):
     import scipy.io as sio
@@ -202,10 +219,12 @@ def load_data_mat(filename):
     return brain_data['X'],1-brain_data['C'].flatten(),brain_data['T'].flatten()
 
 from  sklearn.preprocessing import MinMaxScaler
-from utils import do_tsne
+from utils import do_tsne_grouped_by_C
 if __name__ == '__main__':
 
     quick_test_mode = False
+    tsne = False
+
     if quick_test_mode:
         print "################## WARNING: Quick Test Mode #################"
 
@@ -213,9 +232,9 @@ if __name__ == '__main__':
     mmscaler = MinMaxScaler()
     norm_b_x = mmscaler.fit_transform(b_x)
     ord_b_x,ord_b_c,ord_b_t,at_risk = data_ordered_by_risk(norm_b_x,b_t,b_c)
-    batch_size = 25
+    batch_size = 50
     iterations = 20
-    hid_sizes = [64,64]
+    hid_sizes = [256]
     if quick_test_mode:
         batch_size = 100
         iterations = 2
@@ -231,10 +250,12 @@ if __name__ == '__main__':
 
     sda.pretrain(sess,pt_learning_rate,batch_size,iterations,norm_b_x)
 
-    features_0 = sda.hid_output(sess,batch_size,norm_b_x,0)
-    do_tsne(features_0,b_c,1)
+    if tsne:
+        features_0 = sda.hid_output(sess,batch_size,norm_b_x,0)
+        do_tsne_grouped_by_C(features_0,b_c,1,'TSNE visualization for features in hidden layer 0')
 
-    features_1 = sda.hid_output(sess,batch_size,norm_b_x,1)
-    do_tsne(features_1,b_c,2)
+        if len(hid_sizes)>1:
+            features_1 = sda.hid_output(sess,batch_size,norm_b_x,1)
+            do_tsne_grouped_by_C(features_1,b_c,2,'TSNE visualization for features in hidden layer 1')
 
     sda.finetune(sess,ft_learning_rate,batch_size,iterations,ord_b_x,ord_b_c,at_risk)
