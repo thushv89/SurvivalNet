@@ -185,9 +185,10 @@ class SDA_TF(object):
             print 'Fine-tuning Iteration ',str(step),': ', \
                 sess.run(self.finetune_cost,feed_dict={self.x_sym: batch_xs,self.y_sym:batch_ys,self.risk_sym:batch_risk,self.psum_sym:batch_psum})
 
-    def calc_CI(self,sess, test_x,test_y):
+    def calc_CI(self,sess, test_x,test_C,test_T):
         print '\n Calculating Concordance Index... \n'
         from math import ceil
+        c = []
         n_batches = int(ceil(test_x.shape[0]*1.0/batch_size))
 
         hazard = None
@@ -199,7 +200,8 @@ class SDA_TF(object):
             else:
                 hazard = np.append(hazard,pred,axis=0)
 
-        c_index = _naive_concordance_index(test_y, -hazard, test_y)
+        c_index = _naive_concordance_index(test_T, -hazard, test_C)
+        return c_index
 
 def load_data_mat(filename):
     import scipy.io as sio
@@ -231,31 +233,50 @@ if __name__ == '__main__':
     b_x,b_c,b_t = load_data_mat('..'+os.sep+'data'+os.sep+'Brain_P.mat')
     mmscaler = MinMaxScaler()
     norm_b_x = mmscaler.fit_transform(b_x)
-    ord_b_x,ord_b_c,ord_b_t,at_risk = data_ordered_by_risk(norm_b_x,b_t,b_c)
-    batch_size = 50
+
+    batch_size = 1
     iterations = 20
-    hid_sizes = [256]
+    hid_sizes = [256,128]
     if quick_test_mode:
         batch_size = 100
         iterations = 2
         hid_sizes = [32,32]
 
     pt_learning_rate = 0.04
-    ft_learning_rate = 0.05
+    ft_learning_rate = 0.1
+
+    fold_size = 10
+    data_per_fold = int(norm_b_x.shape[0]*1.0/fold_size)
 
     sda = SDA_TF(183,hid_sizes,1,batch_size=batch_size)
     sess = tf.Session()
     sda.start_session(sess)
     sda.build_costs()
 
-    sda.pretrain(sess,pt_learning_rate,batch_size,iterations,norm_b_x)
+    for fold in range(fold_size):
+        print '\n======================= Fold ',fold,'=======================\n'
+        X_test = norm_b_x[fold*data_per_fold:(fold+1)*data_per_fold]
+        T_test = b_t[fold*data_per_fold:(fold+1)*data_per_fold]
+        C_test = b_c[fold*data_per_fold:(fold+1)*data_per_fold]
 
-    if tsne:
-        features_0 = sda.hid_output(sess,batch_size,norm_b_x,0)
-        do_tsne_grouped_by_C(features_0,b_c,1,'TSNE visualization for features in hidden layer 0')
+        X_train = np.delete(norm_b_x,range(fold*data_per_fold,(fold+1)*data_per_fold),axis=0)
+        T_train = np.delete(b_t,range(fold*data_per_fold,(fold+1)*data_per_fold),axis=0)
+        C_train = np.delete(b_c,range(fold*data_per_fold,(fold+1)*data_per_fold),axis=0)
 
-        if len(hid_sizes)>1:
-            features_1 = sda.hid_output(sess,batch_size,norm_b_x,1)
-            do_tsne_grouped_by_C(features_1,b_c,2,'TSNE visualization for features in hidden layer 1')
+        ord_b_x_train,ord_b_c_train,ord_b_t_train,at_risk_train = data_ordered_by_risk(X_train,T_train,C_train)
+        ord_b_x_test,ord_b_c_test,ord_b_t_test,at_risk_test = data_ordered_by_risk(X_test,T_test,C_test)
 
-    sda.finetune(sess,ft_learning_rate,batch_size,iterations,ord_b_x,ord_b_c,at_risk)
+        sda.pretrain(sess,pt_learning_rate,batch_size,iterations,X_train)
+
+        if tsne:
+            features_0 = sda.hid_output(sess,batch_size,norm_b_x,0)
+            do_tsne_grouped_by_C(features_0,b_c,1,'TSNE visualization for features in hidden layer 0')
+
+            if len(hid_sizes)>1:
+                features_1 = sda.hid_output(sess,batch_size,norm_b_x,1)
+                do_tsne_grouped_by_C(features_1,b_c,2,'TSNE visualization for features in hidden layer 1')
+
+        sda.finetune(sess,ft_learning_rate,batch_size,iterations,ord_b_x_train,ord_b_c_train,at_risk_train)
+        ci_index = sda.calc_CI(sess,ord_b_x_test,ord_b_c_test,ord_b_t_test)
+        print 'Concordance Index for Fold', fold,': ',ci_index
+
